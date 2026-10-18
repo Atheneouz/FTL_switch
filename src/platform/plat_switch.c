@@ -43,7 +43,6 @@ static bool g_audio_paused = true;
 
 // Estado de Mandos (Joy-Con / Pro Controller)
 static PadState g_pad;
-static uint64_t g_last_buttons = 0;
 
 // Estado de Pantalla Táctil
 #define MAX_TOUCHES 10
@@ -88,8 +87,8 @@ void plat_pump_events(void) {
 
     // Comprobamos cambios en el modo de funcionamiento (portátil vs dock)
     AppletOperationMode op_mode = appletGetOperationMode();
-    int target_w = (op_mode == AppletOperationMode_Docked) ? 1920 : 1280;
-    int target_h = (op_mode == AppletOperationMode_Docked) ? 1080 : 720;
+    int target_w = (op_mode == AppletOperationMode_Console) ? 1920 : 1280;
+    int target_h = (op_mode == AppletOperationMode_Console) ? 1080 : 720;
     if (target_w != g_sw || target_h != g_sh) {
         g_sw = target_w;
         g_sh = target_h;
@@ -97,7 +96,7 @@ void plat_pump_events(void) {
         float layout[8] = {0, 0, 0, 0, 300, (float)g_sh, 0};
         ux_configure(g_sw, g_sh, 60, layout);
         LOGI("plat_switch: resolución actualizada a %dx%d (%s)", g_sw, g_sh,
-             (op_mode == AppletOperationMode_Docked) ? "Dock" : "Portátil");
+             (op_mode == AppletOperationMode_Console) ? "Dock" : "Portátil");
     }
 
     // 1. Lectura de mandos
@@ -369,8 +368,8 @@ int main(int argc, char **argv) {
 
     // Detectamos resolución inicial según el modo dock o portátil
     AppletOperationMode op_mode = appletGetOperationMode();
-    g_sw = (op_mode == AppletOperationMode_Docked) ? 1920 : 1280;
-    g_sh = (op_mode == AppletOperationMode_Docked) ? 1080 : 720;
+    g_sw = (op_mode == AppletOperationMode_Console) ? 1920 : 1280;
+    g_sh = (op_mode == AppletOperationMode_Console) ? 1080 : 720;
 
     // Configuramos la ventana y contexto EGL
     NWindow *win = nwindowGetDefault();
