@@ -14,25 +14,6 @@
 #include "loader/macho.h"
 #include "port_log.h"
 
-static uint8_t *g_tramp_page;
-static size_t g_tramp_used;
-
-static void *tramp_alloc(size_t n) {
-    if (!g_tramp_page) {
-#ifdef __SWITCH__
-        g_tramp_page = (uint8_t *)memalign(0x1000, 0x10000);
-        if (!g_tramp_page) return NULL;
-#else
-        g_tramp_page = mmap(NULL, 0x10000, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-        if (g_tramp_page == MAP_FAILED) { g_tramp_page = NULL; return NULL; }
-#endif
-    }
-    if (g_tramp_used + n > 0x10000) return NULL;
-    void *p = g_tramp_page + g_tramp_used;
-    g_tramp_used += (n + 15) & ~(size_t)15;
-    return p;
-}
-
 static int is_pc_relative(uint32_t ins) {
     if ((ins & 0x9f000000) == 0x90000000) return 1;  // adrp
     if ((ins & 0x9f000000) == 0x10000000) return 1;  // adr
@@ -62,8 +43,12 @@ void *patch_hook(mo_image *img, uint64_t addr, void *hook, int want_original) {
                 LOGE("patch_hook %#lx: instruction %d is pc-relative (%08x)", (unsigned long)addr, i, code[i]);
                 return NULL;
             }
-        uint32_t *t = tramp_alloc(32);
-        if (!t) return NULL;
+        if (!img->near_tramp || img->near_tramp_used + 32 > img->near_tramp_size) {
+            LOGE("patch_hook: no hay espacio en near_tramp");
+            return NULL;
+        }
+        uint32_t *t = (uint32_t *)(img->near_tramp + img->near_tramp_used);
+        img->near_tramp_used += 32;
         memcpy(t, code, 16);
         write_abs_jump(t + 4, code + 4);
         __builtin___clear_cache((char *)t, (char *)(t + 8));
@@ -97,12 +82,5 @@ __attribute__((weak)) void debug_hooks_apply(mo_image *img) { (void)img; }
 
 int patches_apply(mo_image *img) {
     debug_hooks_apply(img);
-    int res = ux_patches_apply(img);
-#ifdef __SWITCH__
-    if (g_tramp_page) {
-        __builtin___clear_cache((char *)g_tramp_page, (char *)g_tramp_page + g_tramp_used);
-        svcSetProcessMemoryPermission(CUR_PROCESS_HANDLE, (u64)g_tramp_page, 0x10000, Perm_Rx);
-    }
-#endif
-    return res;
+    return ux_patches_apply(img);
 }

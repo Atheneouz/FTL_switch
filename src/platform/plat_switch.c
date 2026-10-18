@@ -353,10 +353,99 @@ void plat_pad_rumble(float strength, int ms) {
 }
 
 // ---------------------------------------------------------------------------
+// Sistema de registro a archivo en SD y consola
+// ---------------------------------------------------------------------------
+static FILE *s_logfile = NULL;
+
+void switch_log_init(const char *path) {
+    if (s_logfile) {
+        fclose(s_logfile);
+        s_logfile = NULL;
+    }
+    s_logfile = fopen(path, "w");
+}
+
+void switch_log(const char *prefix, const char *fmt, ...) {
+    char buf[1024];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
+
+    fprintf(stderr, "%s%s\n", prefix, buf);
+    if (s_logfile) {
+        fprintf(s_logfile, "%s%s\n", prefix, buf);
+        fflush(s_logfile);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Punto de entrada principal (main)
 // ---------------------------------------------------------------------------
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
+
+    // Creamos directorios de trabajo iniciales y abrimos el registro
+    mkdir("sdmc:/switch", 0755);
+    mkdir("sdmc:/switch/ftl", 0755);
+    mkdir("sdmc:/switch/ftl/logs", 0755);
+    mkdir("sdmc:/switch/ftl/save", 0755);
+    mkdir("sdmc:/switch/ftl/cache", 0755);
+    switch_log_init("sdmc:/switch/ftl/logs/ftl.log");
+
+    LOGI("==================================================");
+    LOGI("  FTL: Faster Than Light - Nintendo Switch Port   ");
+    LOGI("==================================================");
+
+    AppletType at = appletGetAppletType();
+    LOGI("plat_switch: Modo de ejecucion: AppletType=%d (%s)", (int)at,
+         (at == AppletType_Application || at == AppletType_SystemApplication)
+             ? "Title Override / Full RAM"
+             : "Modo Applet / RAM Limitada");
+
+    Handle proc = envGetOwnProcessHandle();
+    LOGI("plat_switch: envGetOwnProcessHandle = 0x%08x", proc);
+
+    u64 mem_available = 0, mem_used = 0;
+    svcGetInfo(&mem_available, InfoType_TotalMemorySize, CUR_PROCESS_HANDLE, 0);
+    svcGetInfo(&mem_used, InfoType_UsedMemorySize, CUR_PROCESS_HANDLE, 0);
+    LOGI("plat_switch: Memoria del proceso: Total=%llu MB, Usada=%llu MB, Libre=%llu MB",
+         mem_available / (1024 * 1024), mem_used / (1024 * 1024),
+         (mem_available > mem_used ? (mem_available - mem_used) : 0) / (1024 * 1024));
+
+    // Rutas del juego en la tarjeta MicroSD
+    const char *base_dir = "sdmc:/switch/ftl";
+    char bin_path[512], bundle_path[512], docs_path[512], cache_path[512], log_path[512];
+
+    snprintf(bin_path, sizeof(bin_path), "%s/FTL", base_dir);
+    snprintf(bundle_path, sizeof(bundle_path), "%s/FTL.app", base_dir);
+    snprintf(docs_path, sizeof(docs_path), "%s/save", base_dir);
+    snprintf(cache_path, sizeof(cache_path), "%s/cache", base_dir);
+    snprintf(log_path, sizeof(log_path), "%s/logs", base_dir);
+
+    // Comprobamos la presencia de los archivos del juego
+    struct stat st;
+    if (stat(bin_path, &st) != 0) {
+        if (stat("FTL", &st) == 0) {
+            snprintf(bin_path, sizeof(bin_path), "FTL");
+            snprintf(bundle_path, sizeof(bundle_path), "FTL.app");
+            snprintf(docs_path, sizeof(docs_path), "save");
+            snprintf(cache_path, sizeof(cache_path), "cache");
+            snprintf(log_path, sizeof(log_path), "logs");
+        } else {
+            port_fatal("No se encuentra el binario ejecutable 'FTL' en:\n  %s\n\n"
+                       "Asegúrate de copiar la carpeta 'ftl' completa dentro de sdmc:/switch/.", bin_path);
+            return 1;
+        }
+    }
+    LOGI("plat_switch: Binario 'FTL' encontrado (%lld bytes)", (long long)st.st_size);
+
+    if (stat(bundle_path, &st) != 0) {
+        port_fatal("No se encuentra la carpeta de recursos 'FTL.app' en:\n  %s\n\n"
+                   "Asegúrate de copiar FTL.app dentro de sdmc:/switch/ftl/.", bundle_path);
+        return 1;
+    }
+    LOGI("plat_switch: Carpeta de recursos 'FTL.app' encontrada");
 
     // Inicializamos el sistema de archivos romfs si existe
     romfsInit();
@@ -377,13 +466,13 @@ int main(int argc, char **argv) {
 
     g_dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     if (g_dpy == EGL_NO_DISPLAY) {
-        LOGE("plat_switch: eglGetDisplay falló");
+        port_fatal("plat_switch: eglGetDisplay falló");
         return 1;
     }
 
     EGLint maj, min;
     if (!eglInitialize(g_dpy, &maj, &min)) {
-        LOGE("plat_switch: eglInitialize falló");
+        port_fatal("plat_switch: eglInitialize falló");
         return 1;
     }
 
@@ -402,13 +491,13 @@ int main(int argc, char **argv) {
 
     EGLint num_configs = 0;
     if (!eglChooseConfig(g_dpy, cfg_attrs, &g_cfg, 1, &num_configs) || num_configs < 1) {
-        LOGE("plat_switch: eglChooseConfig falló");
+        port_fatal("plat_switch: eglChooseConfig falló");
         return 1;
     }
 
     g_surf = eglCreateWindowSurface(g_dpy, g_cfg, (EGLNativeWindowType)win, NULL);
     if (g_surf == EGL_NO_SURFACE) {
-        LOGE("plat_switch: eglCreateWindowSurface falló");
+        port_fatal("plat_switch: eglCreateWindowSurface falló");
         return 1;
     }
 
@@ -421,22 +510,6 @@ int main(int argc, char **argv) {
     float layout[8] = {0, 0, 0, 0, 300, (float)g_sh, 0};
     ux_configure(g_sw, g_sh, 60, layout);
     ux_pad_connected(true, "Nintendo Switch Pad");
-
-    // Rutas del juego en la tarjeta MicroSD
-    const char *base_dir = "sdmc:/switch/ftl";
-    char bin_path[512], bundle_path[512], docs_path[512], cache_path[512], log_path[512];
-
-    snprintf(bin_path, sizeof(bin_path), "%s/FTL", base_dir);
-    snprintf(bundle_path, sizeof(bundle_path), "%s/FTL.app", base_dir);
-    snprintf(docs_path, sizeof(docs_path), "%s/save", base_dir);
-    snprintf(cache_path, sizeof(cache_path), "%s/cache", base_dir);
-    snprintf(log_path, sizeof(log_path), "%s/logs", base_dir);
-
-    // Creamos directorios de trabajo si no existen
-    mkdir(base_dir, 0755);
-    mkdir(docs_path, 0755);
-    mkdir(cache_path, 0755);
-    mkdir(log_path, 0755);
 
     port_config cfg = {
         .binary_path = bin_path,
@@ -462,14 +535,63 @@ int main(int argc, char **argv) {
     SDL_Quit();
     romfsExit();
 
+    if (s_logfile) {
+        fclose(s_logfile);
+        s_logfile = NULL;
+    }
+
     return ret;
 }
 
 void port_report_fatal(const char *msg) {
     LOGE("plat_switch: ERROR FATAL: %s", msg ? msg : "desconocido");
+    if (s_logfile) {
+        fflush(s_logfile);
+        fclose(s_logfile);
+        s_logfile = NULL;
+    }
+
+    if (g_surf != EGL_NO_SURFACE) { eglDestroySurface(g_dpy, g_surf); g_surf = EGL_NO_SURFACE; }
+    if (g_ctx != EGL_NO_CONTEXT) { eglDestroyContext(g_dpy, g_ctx); g_ctx = EGL_NO_CONTEXT; }
+    if (g_dpy != EGL_NO_DISPLAY) { eglTerminate(g_dpy); g_dpy = EGL_NO_DISPLAY; }
+
+    consoleInit(NULL);
+    padConfigureInput(1, HidNpadStyleSet_NpadStandard);
+    PadState pad;
+    padInitializeDefault(&pad);
+
+    printf("\x1b[2J\x1b[H\n");
+    printf(" \x1b[31;1m========================================================\x1b[0m\n");
+    printf(" \x1b[31;1m             ERROR FATAL AL INICIAR FTL                 \x1b[0m\n");
+    printf(" \x1b[31;1m========================================================\x1b[0m\n\n");
+    printf(" \x1b[37;1mDetalle del error:\x1b[0m\n");
+    printf("   %s\n\n", msg ? msg : "(Sin descripcion disponible)");
+    printf(" \x1b[33;1mComprobaciones recomendadas:\x1b[0m\n");
+    printf("   1. Iniciar con Title Override: mantener pulsado (R) al\n");
+    printf("      abrir cualquier juego comercial de Nintendo Switch.\n");
+    printf("   2. Verificar que 'FTL' y 'FTL.app' esten en 'sdmc:/switch/ftl/'.\n");
+    printf("   3. Revisar el archivo de registro en:\n");
+    printf("      \x1b[36;1msdmc:/switch/ftl/logs/ftl.log\x1b[0m\n\n");
+    printf(" \x1b[32;1mPulsa (+) para volver al Homebrew Menu...\x1b[0m\n");
+    consoleUpdate(NULL);
+
+    u64 start_tick = armGetSystemTick();
+    while (appletMainLoop()) {
+        padUpdate(&pad);
+        u64 kDown = padGetButtonsDown(&pad);
+        if (kDown & HidNpadButton_Plus) break;
+        if (armTicksToNs(armGetSystemTick() - start_tick) > 30ULL * 1000000000ULL) break;
+        consoleUpdate(NULL);
+    }
+    consoleExit(NULL);
 }
 
 void port_on_game_exit(int code) {
     LOGI("plat_switch: salida del juego con código %d", code);
+    if (s_logfile) {
+        fflush(s_logfile);
+        fclose(s_logfile);
+        s_logfile = NULL;
+    }
 }
 

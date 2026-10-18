@@ -208,11 +208,51 @@ int mo_load(const char *path, mo_image *img) {
     size_t span = (size_t)(hi - lo);
     // Extra room after the image for "near" trampolines reachable by a 4-byte b.
     const size_t tramp_size = 0x40000;
-    size_t reserve = span + tramp_size + align;
+    size_t reserve = (span + tramp_size + align + 0xFFF) & ~0xFFFULL;
 #ifdef __SWITCH__
+    virtmemLock();
+    void *map_addr = virtmemFindCodeMemory(reserve, 0x1000);
+    VirtmemReservation *rv = virtmemAddReservation(map_addr, reserve);
+    virtmemUnlock();
+    if (!map_addr || !rv) {
+        LOGE("macho: virtmemFindCodeMemory %zu falló", reserve);
+        return -1;
+    }
+
     uint8_t *raw = (uint8_t *)memalign(align, reserve);
-    if (!raw) { LOGE("macho: memalign %zu falló", reserve); return -1; }
-    uint8_t *base = raw;
+    if (!raw) {
+        LOGE("macho: memalign %zu falló", reserve);
+        return -1;
+    }
+    memset(raw, 0, reserve);
+
+    Handle proc = envGetOwnProcessHandle();
+    if (proc == INVALID_HANDLE) {
+        LOGE("macho: envGetOwnProcessHandle devolvió INVALID_HANDLE");
+        free(raw);
+        return -1;
+    }
+
+    Result rc = svcMapProcessCodeMemory(proc, (u64)map_addr, (u64)raw, reserve);
+    if (R_FAILED(rc)) {
+        LOGE("macho: svcMapProcessCodeMemory falló con código 0x%08x (proc=0x%x, size=%zu)", rc, proc, reserve);
+        LOGE("¿Estás ejecutando FTL en Modo Applet (Álbum)? Para ejecutar FTL se requiere Modo Completo (mantener R al abrir un juego).");
+        free(raw);
+        return -1;
+    }
+
+    rc = svcSetProcessMemoryPermission(proc, (u64)map_addr, reserve, Perm_Rw);
+    if (R_FAILED(rc)) {
+        LOGE("macho: svcSetProcessMemoryPermission (Perm_Rw) falló con código 0x%08x", rc);
+        svcUnmapProcessCodeMemory(proc, (u64)map_addr, (u64)raw, reserve);
+        free(raw);
+        return -1;
+    }
+
+    uint8_t *base = (uint8_t *)map_addr;
+    img->src_heap = raw;
+    img->code_mem = map_addr;
+    img->map_reservation = rv;
 #else
     uint8_t *raw = mmap(NULL, reserve, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (raw == MAP_FAILED) { LOGE("macho: mmap %zu failed", reserve); return -1; }
@@ -222,6 +262,7 @@ int mo_load(const char *path, mo_image *img) {
 #endif
     img->near_tramp = base + span;
     img->near_tramp_size = tramp_size;
+    img->near_tramp_used = 0;
 
     img->base = base;
     img->vmaddr_min = lo;
@@ -296,23 +337,13 @@ __asm__(
     "  mov x0, x16\n"
     "  b mo_trap_c\n");
 
-static uint8_t *g_stub_page;
-static size_t g_stub_used, g_stub_cap;
-
-static void *make_trap_stub(const char *name) {
-    if (!g_stub_page || g_stub_used + 32 > g_stub_cap) {
-        g_stub_cap = 0x10000;
-#ifdef __SWITCH__
-        g_stub_page = (uint8_t *)memalign(0x1000, g_stub_cap);
-        if (!g_stub_page) port_fatal("stub memalign falló");
-#else
-        g_stub_page = mmap(NULL, g_stub_cap, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-        if (g_stub_page == MAP_FAILED) port_fatal("stub mmap failed");
-#endif
-        g_stub_used = 0;
+static void *make_trap_stub(mo_image *img, const char *name) {
+    if (!img->near_tramp || img->near_tramp_used + 32 > img->near_tramp_size) {
+        port_fatal("macho: no hay espacio en near_tramp para stub '%s'", name);
+        return NULL;
     }
-    uint32_t *s = (uint32_t *)(g_stub_page + g_stub_used);
-    g_stub_used += 32;
+    uint32_t *s = (uint32_t *)(img->near_tramp + img->near_tramp_used);
+    img->near_tramp_used += 32;
     s[0] = 0x58000090;  // ldr x16, #16
     s[1] = 0x580000B1;  // ldr x17, #20
     s[2] = 0xD61F0220;  // br x17
@@ -348,7 +379,7 @@ static int do_binds(mo_image *img, const uint8_t *p, const uint8_t *end, int laz
                 LOGW("macho: unresolved %s%s (%s)", sym, weak_import ? " [weak]" : "", lib ? lib : "?"); \
                 int looks_data = !strncmp(sym, "_OBJC_", 6) || !strncmp(sym, "_k", 2) ||        \
                                  strstr(sym, "Notification") || strstr(sym, "Key");             \
-                target = looks_data ? (void *)g_zero_data : make_trap_stub(sym);             \
+                target = looks_data ? (void *)g_zero_data : make_trap_stub(img, sym);        \
             }                                                                             \
             resolved = 1;                                                                 \
         }                                                                                 \
@@ -404,6 +435,37 @@ int mo_bind(mo_image *img, mo_resolver resolve) {
 }
 
 void mo_protect(mo_image *img) {
+#ifdef __SWITCH__
+    Handle proc = envGetOwnProcessHandle();
+    armDCacheFlush(img->base, img->map_size + img->near_tramp_size);
+    for (int i = 0; i < img->nsegs; i++) {
+        mo_segment *s = &img->segs[i];
+        if (!strcmp(s->name, "__PAGEZERO")) continue;
+        uint64_t a = (uint64_t)(img->base + (s->vmaddr - img->vmaddr_min));
+        uint64_t sz = (s->vmsize + 0xFFF) & ~0xFFFULL;
+        uint32_t perm = Perm_R;
+        if (s->initprot & 4) perm = Perm_Rx;
+        else if (s->initprot & 2) perm = Perm_Rw;
+        else if (s->initprot & 1) perm = Perm_R;
+        Result rc = svcSetProcessMemoryPermission(proc, a, sz, perm);
+        if (R_FAILED(rc)) {
+            LOGW("macho: svcSetProcessMemoryPermission for %s (0x%lx, perm=%u) falló: 0x%08x", s->name, (unsigned long)a, perm, rc);
+        } else {
+            LOGI("macho: segmento %s (0x%lx, %zu bytes) protegido como %s", s->name, (unsigned long)a, (size_t)sz, (perm == Perm_Rx) ? "RX" : ((perm == Perm_Rw) ? "RW" : "R"));
+        }
+    }
+    if (img->near_tramp) {
+        uint64_t tramp_a = (uint64_t)img->near_tramp;
+        uint64_t tramp_sz = (img->near_tramp_size + 0xFFF) & ~0xFFFULL;
+        Result rc = svcSetProcessMemoryPermission(proc, tramp_a, tramp_sz, Perm_Rx);
+        if (R_FAILED(rc)) {
+            LOGW("macho: svcSetProcessMemoryPermission for near_tramp falló: 0x%08x", rc);
+        } else {
+            LOGI("macho: near_tramp (0x%lx, %zu bytes) protegido como RX", (unsigned long)tramp_a, (size_t)tramp_sz);
+        }
+    }
+    armICacheInvalidate(img->base, img->map_size + img->near_tramp_size);
+#else
     for (int i = 0; i < img->nsegs; i++) {
         mo_segment *s = &img->segs[i];
         if (!strcmp(s->name, "__PAGEZERO")) continue;
@@ -414,26 +476,12 @@ void mo_protect(mo_image *img) {
         uint8_t *a = img->base + (s->vmaddr - img->vmaddr_min);
         if (prot & PROT_EXEC) {
             __builtin___clear_cache((char *)a, (char *)a + s->vmsize);
-#ifdef __SWITCH__
-            svcSetProcessMemoryPermission(CUR_PROCESS_HANDLE, (u64)a, s->vmsize, Perm_Rx);
-#endif
         }
-#ifndef __SWITCH__
         if (mprotect(a, (size_t)s->vmsize, prot) != 0) LOGW("macho: mprotect %s failed: %s", s->name, strerror(errno));
-#endif
     }
     if (img->near_tramp) {
         __builtin___clear_cache((char *)img->near_tramp, (char *)img->near_tramp + img->near_tramp_size);
-#ifdef __SWITCH__
-        svcSetProcessMemoryPermission(CUR_PROCESS_HANDLE, (u64)img->near_tramp, img->near_tramp_size, Perm_Rx);
-#else
         mprotect(img->near_tramp, img->near_tramp_size, PROT_READ | PROT_EXEC);
-#endif
-    }
-#ifdef __SWITCH__
-    if (g_stub_page) {
-        __builtin___clear_cache((char *)g_stub_page, (char *)g_stub_page + g_stub_used);
-        svcSetProcessMemoryPermission(CUR_PROCESS_HANDLE, (u64)g_stub_page, g_stub_cap, Perm_Rx);
     }
 #endif
 }

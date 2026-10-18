@@ -13,6 +13,12 @@ void port_memory(long *free_mb, long *total_mb, long *game_mb);
 #define LOGI(...) port_log(ANDROID_LOG_INFO, __VA_ARGS__)
 #define LOGW(...) port_log(ANDROID_LOG_WARN, __VA_ARGS__)
 #define LOGE(...) port_log(ANDROID_LOG_ERROR, __VA_ARGS__)
+#elif defined(__SWITCH__)
+void switch_log(const char *prefix, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+#define LOGI(...) switch_log("[I] ", __VA_ARGS__)
+#define LOGW(...) switch_log("[W] ", __VA_ARGS__)
+#define LOGE(...) switch_log("[E] ", __VA_ARGS__)
+static inline void port_log_mark_crash(void) {}
 #else
 #define LOGI(...) do { fprintf(stderr, "[I] " __VA_ARGS__); fputc('\n', stderr); } while (0)
 #define LOGW(...) do { fprintf(stderr, "[W] " __VA_ARGS__); fputc('\n', stderr); } while (0)
