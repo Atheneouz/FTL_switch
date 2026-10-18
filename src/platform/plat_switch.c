@@ -464,3 +464,12 @@ int main(int argc, char **argv) {
 
     return ret;
 }
+
+void port_report_fatal(const char *msg) {
+    LOGE("plat_switch: ERROR FATAL: %s", msg ? msg : "desconocido");
+}
+
+void port_on_game_exit(int code) {
+    LOGI("plat_switch: salida del juego con código %d", code);
+}
+

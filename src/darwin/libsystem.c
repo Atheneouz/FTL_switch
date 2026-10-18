@@ -23,6 +23,7 @@
 
 #ifdef __SWITCH__
 #include <switch.h>
+#include <malloc.h>
 #endif
 
 #include "port_log.h"
@@ -318,6 +319,16 @@ int darwin_rand(void) {
 void darwin_srand(unsigned seed) { g_rand_next = seed; }
 
 long darwin_sysconf(int name) {
+#ifdef __SWITCH__
+    switch (name) {
+    case 29: return 4096;
+    case 57: return 4;
+    case 58: return 4;
+    case 200: return 1024 * 1024;
+    case 3: return 100;
+    default: LOGW("sysconf(%d) unsupported", name); errno = EINVAL; return -1;
+    }
+#else
     switch (name) {
     case 29: return sysconf(_SC_PAGESIZE);
     case 57: return sysconf(_SC_NPROCESSORS_CONF);
@@ -326,6 +337,7 @@ long darwin_sysconf(int name) {
     case 3: return sysconf(_SC_CLK_TCK);
     default: LOGW("sysconf(%d) unsupported", name); errno = EINVAL; return -1;
     }
+#endif
 }
 
 static char g_hw_machine[32] = "iPad8,1";
@@ -584,10 +596,15 @@ int darwin_pthread_create(pthread_t *th, const d_attr_t *a, void *(*fn)(void *),
 int darwin_pthread_join(pthread_t th, void **ret) { return pthread_join(th, ret); }
 pthread_t darwin_pthread_self(void) { return pthread_self(); }
 int darwin_pthread_setname_np(const char *name) {
+#ifdef __SWITCH__
+    (void)name;
+    return 0;
+#else
     char buf[16];
     strncpy(buf, name, 15);
     buf[15] = 0;
     return pthread_setname_np(pthread_self(), buf);
+#endif
 }
 int darwin_pthread_getschedparam(pthread_t th, int *policy, int *param) {
     (void)th;
@@ -711,7 +728,11 @@ int darwin_task_info(uint32_t task, int flavor, int32_t *info, uint32_t *count) 
         if (fscanf(f, "%ld %ld", &sz, &rss_pages) != 2) rss_pages = 0;
         fclose(f);
     }
+#ifdef __SWITCH__
+    uint64_t rss = 0;
+#else
     uint64_t rss = (uint64_t)rss_pages * (uint64_t)sysconf(_SC_PAGESIZE);
+#endif
     if (flavor == 20) {  // virtual_size(8) resident_size(8) resident_size_max(8) user_time(8) system_time(8) policy(4) suspend_count(4)
         memset(info, 0, (count ? *count : 12) * 4);
         uint64_t vals[3] = {rss * 4, rss, rss};
@@ -939,5 +960,65 @@ int dlclose(void *handle) {
 char *dlerror(void) {
     return "Dynamic linking not supported on baremetal Switch";
 }
+
+int dladdr(const void *addr, void *info) {
+    (void)addr; (void)info;
+    return 0;
+}
+
+int posix_memalign(void **memptr, size_t alignment, size_t size) {
+    if (!memptr) return EINVAL;
+    void *p = memalign(alignment, size);
+    if (!p) return ENOMEM;
+    *memptr = p;
+    return 0;
+}
+
+long sysconf(int name) {
+    if (name == 29 || name == 4) return 4096;
+    if (name == 57 || name == 58 || name == 84) return 4;
+    return -1;
+}
+
+int __isoc99_vsscanf(const char *str, const char *format, va_list ap) {
+    return vsscanf(str, format, ap);
+}
+
+int __isoc99_sscanf(const char *str, const char *format, ...) {
+    va_list ap;
+    va_start(ap, format);
+    int r = vsscanf(str, format, ap);
+    va_end(ap);
+    return r;
+}
+
+static int32_t s_toupper_tab[384];
+static int32_t s_tolower_tab[384];
+static const int32_t *s_toupper_ptr = s_toupper_tab + 128;
+static const int32_t *s_tolower_ptr = s_tolower_tab + 128;
+
+const int32_t **__ctype_toupper_loc(void) {
+    if (s_toupper_tab[128 + 'a'] == 0) {
+        for (int i = -128; i < 256; i++) {
+            s_toupper_tab[128 + i] = (i >= 'a' && i <= 'z') ? (i - 'a' + 'A') : i;
+            s_tolower_tab[128 + i] = (i >= 'A' && i <= 'Z') ? (i - 'A' + 'a') : i;
+        }
+    }
+    return &s_toupper_ptr;
+}
+
+const int32_t **__ctype_tolower_loc(void) {
+    __ctype_toupper_loc();
+    return &s_tolower_ptr;
+}
+
+size_t __ctype_get_mb_cur_max(void) {
+    return 1;
+}
+
+void *catopen(const char *name, int oflag) { (void)name; (void)oflag; return (void *)-1; }
+char *catgets(void *catd, int set_id, int msg_id, const char *s) { (void)catd; (void)set_id; (void)msg_id; return (char *)s; }
+int catclose(void *catd) { (void)catd; return 0; }
 #endif
+
 
