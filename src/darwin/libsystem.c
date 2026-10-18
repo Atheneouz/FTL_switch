@@ -1019,6 +1019,24 @@ size_t __ctype_get_mb_cur_max(void) {
 void *catopen(const char *name, int oflag) { (void)name; (void)oflag; return (void *)-1; }
 char *catgets(void *catd, int set_id, int msg_id, const char *s) { (void)catd; (void)set_id; (void)msg_id; return (char *)s; }
 int catclose(void *catd) { (void)catd; return 0; }
+
+ssize_t pread(int fd, void *buf, size_t n, off_t off) {
+    off_t orig = lseek(fd, 0, SEEK_CUR);
+    if (orig == (off_t)-1) return -1;
+    if (lseek(fd, off, SEEK_SET) == (off_t)-1) return -1;
+    ssize_t r = read(fd, buf, n);
+    lseek(fd, orig, SEEK_SET);
+    return r;
+}
+
+ssize_t pwrite(int fd, const void *buf, size_t n, off_t off) {
+    off_t orig = lseek(fd, 0, SEEK_CUR);
+    if (orig == (off_t)-1) return -1;
+    if (lseek(fd, off, SEEK_SET) == (off_t)-1) return -1;
+    ssize_t r = write(fd, buf, n);
+    lseek(fd, orig, SEEK_SET);
+    return r;
+}
 #endif
 
 
