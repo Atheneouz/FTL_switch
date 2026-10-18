@@ -79,21 +79,27 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DLIBCXX_DIR=/tmp/libcxx-out
 
-      - name: Compilar ftl.nro
+      - name: Compilar ftl.nro y main (NSO nativo)
         run: |
           cmake --build build
+          if [ -f build/ftl.elf ]; then
+            elf2nso build/ftl.elf build/main
+          elif [ -f build/ftl ]; then
+            elf2nso build/ftl build/main
+          fi
 
-      - name: Verificar binario generado
+      - name: Verificar binarios generados
         run: |
-          find build -maxdepth 2 -type f \( -name "*.nro" -o -name "*.elf" \) -exec ls -lh {} +
+          find build -maxdepth 2 -type f \( -name "*.nro" -o -name "*.elf" -o -name "main" \) -exec ls -lh {} +
           if [ -f build/ftl.elf.nro ] && [ ! -f build/ftl.nro ]; then
             cp -v build/ftl.elf.nro build/ftl.nro
           fi
 
-      - name: Subir artefacto Homebrew (.nro)
+      - name: Subir artefacto Homebrew (.nro y main NSO)
         uses: actions/upload-artifact@v4
         with:
           name: ftl-switch-build
           path: |
             build/*.nro
+            build/main
             README.md
