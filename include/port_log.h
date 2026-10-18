@@ -19,6 +19,7 @@ void switch_log(const char *prefix, const char *fmt, ...) __attribute__((format(
 #define LOGW(...) switch_log("[W] ", __VA_ARGS__)
 #define LOGE(...) switch_log("[E] ", __VA_ARGS__)
 static inline void port_log_mark_crash(void) {}
+static inline void port_memory(long *free_mb, long *total_mb, long *game_mb) { *free_mb = *total_mb = *game_mb = 0; }
 #else
 #define LOGI(...) do { fprintf(stderr, "[I] " __VA_ARGS__); fputc('\n', stderr); } while (0)
 #define LOGW(...) do { fprintf(stderr, "[W] " __VA_ARGS__); fputc('\n', stderr); } while (0)
