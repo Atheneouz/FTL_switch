@@ -39,7 +39,7 @@ static void *png_parse(const void *data, uint32_t size, int mem_flags, int *w_re
         return NULL;
     }
     void *(*mem_alloc)(size_t, unsigned, unsigned long) =
-        (void *(*)(size_t, unsigned, unsigned long))mo_ptr(g_img, G_MEM_ALLOC);
+        (void *(*)(size_t, unsigned, unsigned long))mo_runtime_ptr(g_img, G_MEM_ALLOC);
     size_t bytes = (size_t)w * h * 4;
     void *out = mem_alloc(bytes, 0, (unsigned long)mem_flags & ~1ul);
     if (out) {

@@ -258,7 +258,7 @@ int targets_get(ux_target *out, int max) {
 void targets_set_frame_fn(void (*fn)(void *app)) { g_frame_fn = fn; }
 
 int targets_install(mo_image *img) {
-    g_matrix = mo_ptr(img, G_CSURFACE_MATRIX);
+    g_matrix = mo_runtime_ptr(img, G_CSURFACE_MATRIX);
     g_capp_render = patch_hook(img, G_CAPP_ONRENDER, (void *)capp_render_hook, 1);
     g_button_render = patch_hook(img, G_BUTTON_ONRENDER, (void *)button_render_hook, 1);
     g_textbutton_render = patch_hook(img, G_TEXTBUTTON_ONRENDER, (void *)textbutton_render_hook, 1);

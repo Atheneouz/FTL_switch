@@ -58,7 +58,7 @@ static int by_path(const void *a, const void *b) {
 }
 
 static void open_data(void) {
-    void *(*sys_file_open)(const char *) = (void *(*)(const char *))mo_ptr(g_img, G_SYS_FILE_OPEN);
+    void *(*sys_file_open)(const char *) = (void *(*)(const char *))mo_runtime_ptr(g_img, G_SYS_FILE_OPEN);
     g_data_file = sys_file_open(g_data_path);
     if (!g_data_file) LOGE("mods: can't open %s", g_data_path);
 }

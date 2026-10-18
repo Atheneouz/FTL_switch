@@ -180,7 +180,7 @@ int ux_patches_apply(mo_image *img) {
 
 // ---------------------------------------------------------------------------------
 // game state probes
-static void *capp(void) { return g_img ? *(void **)mo_ptr(g_img, G_CAPP_PTR) : NULL; }
+static void *capp(void) { return g_img ? *(void **)mo_runtime_ptr(g_img, G_CAPP_PTR) : NULL; }
 uint8_t *ux_capp(void) { return capp(); }
 bool ux_in_main_menu(void) {
     uint8_t *a = capp();
@@ -205,7 +205,7 @@ int ux_toggle_pause(void) {
     if (!a || a[CAPP_MENU] || a[CAPP_STARTUP]) return -1;
     uint8_t *gui = *(uint8_t **)(a + CAPP_GUI);
     if (!gui) return -1;
-    ((void (*)(void *))mo_ptr(g_img, G_TOGGLE_PAUSE))(gui);
+    ((void (*)(void *))mo_runtime_ptr(g_img, G_TOGGLE_PAUSE))(gui);
     return gui[GUI_PAUSED] != 0;
 }
 bool ux_paused(void) {
@@ -219,9 +219,9 @@ bool ux_paused(void) {
 // event injection (main thread)
 static void post_event(sil_event *e) {
     if (!g_img) return;
-    double base = *(double *)mo_ptr(g_img, G_TIME_BASE);
+    double base = *(double *)mo_runtime_ptr(g_img, G_TIME_BASE);
     e->time = base > 0 ? now_s() - base : 0;
-    void (*fn)(sil_event *) = (void (*)(sil_event *))mo_ptr(g_img, G_POST_EVENT);
+    void (*fn)(sil_event *) = (void (*)(sil_event *))mo_runtime_ptr(g_img, G_POST_EVENT);
     fn(e);
 }
 void ux_key(int sil_code, bool down) {
