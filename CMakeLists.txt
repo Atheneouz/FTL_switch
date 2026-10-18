@@ -113,7 +113,14 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
     set(APP_TITLE "FTL: Faster Than Light")
     set(APP_AUTHOR "Subset Games / Sidd065 / FTL-Switch")
     set(APP_VERSION "1.6.21")
-    set(APP_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon.jpg")
+
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon.jpg")
+        set(APP_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon.jpg")
+        set(OPTIONAL_ICON ICON "${APP_ICON}")
+    else()
+        set(APP_ICON "")
+        set(OPTIONAL_ICON "")
+    endif()
 
     if(COMMAND nx_create_nro)
         # Macro nativa de devkitPro CMake
@@ -121,7 +128,7 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
             NAME "${APP_TITLE}"
             AUTHOR "${APP_AUTHOR}"
             VERSION "${APP_VERSION}"
-            ICON "${APP_ICON}"
+            ${OPTIONAL_ICON}
         )
     else()
         # Fallback mediante comandos directos de devkitPro
