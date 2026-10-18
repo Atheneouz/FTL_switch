@@ -302,8 +302,13 @@ static size_t g_stub_used, g_stub_cap;
 static void *make_trap_stub(const char *name) {
     if (!g_stub_page || g_stub_used + 32 > g_stub_cap) {
         g_stub_cap = 0x10000;
+#ifdef __SWITCH__
+        g_stub_page = (uint8_t *)memalign(0x1000, g_stub_cap);
+        if (!g_stub_page) port_fatal("stub memalign falló");
+#else
         g_stub_page = mmap(NULL, g_stub_cap, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
         if (g_stub_page == MAP_FAILED) port_fatal("stub mmap failed");
+#endif
         g_stub_used = 0;
     }
     uint32_t *s = (uint32_t *)(g_stub_page + g_stub_used);
@@ -413,15 +418,24 @@ void mo_protect(mo_image *img) {
             svcSetProcessMemoryPermission(CUR_PROCESS_HANDLE, (u64)a, s->vmsize, Perm_Rx);
 #endif
         }
+#ifndef __SWITCH__
         if (mprotect(a, (size_t)s->vmsize, prot) != 0) LOGW("macho: mprotect %s failed: %s", s->name, strerror(errno));
+#endif
     }
     if (img->near_tramp) {
         __builtin___clear_cache((char *)img->near_tramp, (char *)img->near_tramp + img->near_tramp_size);
 #ifdef __SWITCH__
         svcSetProcessMemoryPermission(CUR_PROCESS_HANDLE, (u64)img->near_tramp, img->near_tramp_size, Perm_Rx);
-#endif
+#else
         mprotect(img->near_tramp, img->near_tramp_size, PROT_READ | PROT_EXEC);
+#endif
     }
+#ifdef __SWITCH__
+    if (g_stub_page) {
+        __builtin___clear_cache((char *)g_stub_page, (char *)g_stub_page + g_stub_used);
+        svcSetProcessMemoryPermission(CUR_PROCESS_HANDLE, (u64)g_stub_page, g_stub_cap, Perm_Rx);
+    }
+#endif
 }
 
 struct ProgramVars {

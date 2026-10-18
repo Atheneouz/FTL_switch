@@ -3,7 +3,13 @@
 
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef __SWITCH__
+#include <switch.h>
+#include <malloc.h>
+#else
 #include <sys/mman.h>
+#endif
 
 #include "loader/macho.h"
 #include "port_log.h"
@@ -13,8 +19,13 @@ static size_t g_tramp_used;
 
 static void *tramp_alloc(size_t n) {
     if (!g_tramp_page) {
+#ifdef __SWITCH__
+        g_tramp_page = (uint8_t *)memalign(0x1000, 0x10000);
+        if (!g_tramp_page) return NULL;
+#else
         g_tramp_page = mmap(NULL, 0x10000, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
         if (g_tramp_page == MAP_FAILED) { g_tramp_page = NULL; return NULL; }
+#endif
     }
     if (g_tramp_used + n > 0x10000) return NULL;
     void *p = g_tramp_page + g_tramp_used;
@@ -86,5 +97,12 @@ __attribute__((weak)) void debug_hooks_apply(mo_image *img) { (void)img; }
 
 int patches_apply(mo_image *img) {
     debug_hooks_apply(img);
-    return ux_patches_apply(img);
+    int res = ux_patches_apply(img);
+#ifdef __SWITCH__
+    if (g_tramp_page) {
+        __builtin___clear_cache((char *)g_tramp_page, (char *)g_tramp_page + g_tramp_used);
+        svcSetProcessMemoryPermission(CUR_PROCESS_HANDLE, (u64)g_tramp_page, 0x10000, Perm_Rx);
+    }
+#endif
+    return res;
 }

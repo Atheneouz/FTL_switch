@@ -113,15 +113,18 @@ int port_run_game(const port_config *cfg) {
 // ---------------------------------------------------------------------------
 // Crash diagnostics: walk the frame-pointer chain (both our code and Apple's
 // arm64 code keep x29 frames) and print game addresses at link-time values.
+#ifndef __SWITCH__
 #include <signal.h>
 #include <ucontext.h>
 #include <dlfcn.h>
+#endif
 
 static void describe_addr(uintptr_t pc, char *out, size_t n) {
     if (g_img.base && pc >= (uintptr_t)g_img.base && pc < (uintptr_t)g_img.base + g_img.map_size) {
         snprintf(out, n, "FTL+%#lx", (unsigned long)(pc - (uintptr_t)g_img.slide));
         return;
     }
+#ifndef __SWITCH__
     Dl_info di;
     if (dladdr((void *)pc, &di) && di.dli_fname) {
         const char *f = strrchr(di.dli_fname, '/');
@@ -129,6 +132,7 @@ static void describe_addr(uintptr_t pc, char *out, size_t n) {
                  (unsigned long)(pc - (uintptr_t)(di.dli_saddr ? di.dli_saddr : di.dli_fbase)));
         return;
     }
+#endif
     snprintf(out, n, "%#lx", (unsigned long)pc);
 }
 
@@ -150,6 +154,7 @@ void port_backtrace_from(uintptr_t pc, uintptr_t lr, uintptr_t fp, const char *w
     }
 }
 
+#ifndef __SWITCH__
 static void crash_handler(int sig, siginfo_t *si, void *uc_) {
     ucontext_t *uc = uc_;
 #if defined(__aarch64__)
@@ -178,3 +183,8 @@ void port_install_crash_handler(void) {
     sigaction(SIGABRT, &sa, NULL);
     sigaction(SIGFPE, &sa, NULL);
 }
+#else
+void port_install_crash_handler(void) {
+    // En Nintendo Switch, Atmósfera y libnx gestionan las excepciones nativamente
+}
+#endif

@@ -4,7 +4,9 @@
 // memory. Built from github.com/Sidd065/FTL-Hyperspace (branch android-arm64).
 #include "hyperspace.h"
 
+#ifndef __SWITCH__
 #include <dlfcn.h>
+#endif
 #include <stdio.h>
 
 #include "hyperspace_host.h"
@@ -25,6 +27,11 @@ static void hs_log(int level, const char *msg) {
 
 int hyperspace_start(const char *lib, const char *log_dir, const char *data_dir, mo_image *img, char *err,
                      size_t errsize) {
+#ifdef __SWITCH__
+    (void)lib; (void)log_dir; (void)data_dir; (void)img;
+    snprintf(err, errsize, "Hyperspace no está soportado en Nintendo Switch.");
+    return -1;
+#else
     LOGI("hyperspace: loading %s", lib);
     void *h = dlopen(lib, RTLD_NOW | RTLD_LOCAL);
     if (!h) {
@@ -56,6 +63,7 @@ int hyperspace_start(const char *lib, const char *log_dir, const char *data_dir,
     g_right_button = (hs_android_right_button_fn)dlsym(h, "hs_android_right_button");
     LOGI("hyperspace: started");
     return 0;
+#endif
 }
 
 bool hyperspace_wants_right_click(void) {

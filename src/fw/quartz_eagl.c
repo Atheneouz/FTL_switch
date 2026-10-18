@@ -2,7 +2,9 @@
 // (EAGLContext) on top of EGL/GLES3. The game's "drawable" renderbuffer is a
 // real offscreen renderbuffer; presentRenderbuffer: composites it onto the
 // window surface (scaling/letterboxing as configured) and swaps.
+#ifndef __SWITCH__
 #include <dlfcn.h>
+#endif
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
@@ -460,6 +462,9 @@ void *eagl_get_proc(const char *name) {
     if (strstr(name, "ARB") || strstr(name, "Named") || strstr(name, "Texture") == name + 2 ||
         (!strncmp(name, "glCreate", 8) && strcmp(name, "glCreateProgram") && strcmp(name, "glCreateShader")))
         return NULL;
+#ifdef __SWITCH__
+    return plat_gl_get_proc(name);
+#else
     void *p = NULL;
     if (!g_gles_lib) {
         g_gles_lib = dlopen("libGLESv3.so", RTLD_NOW | RTLD_LOCAL);
@@ -469,6 +474,7 @@ void *eagl_get_proc(const char *name) {
     if (g_gles_lib) p = dlsym(g_gles_lib, name);
     if (!p) p = plat_gl_get_proc(name);
     return p;
+#endif
 }
 
 // ---------------------------------------------------------------------------
