@@ -887,3 +887,57 @@ void darwin_exit(int code) {
     port_on_game_exit(code);
     exit(code);
 }
+
+#ifdef __SWITCH__
+// Shims de compatibilidad para enlazar libc++/libunwind (compiladas para aarch64) con newlib
+#undef stderr
+FILE *stderr = NULL;
+
+__attribute__((constructor(101)))
+static void init_switch_libc_shims(void) {
+    if (!stderr && _impure_ptr) {
+        stderr = _impure_ptr->_stderr;
+    }
+}
+
+int *__errno_location(void) {
+    return __errno();
+}
+
+long syscall(long number, ...) {
+    (void)number;
+    return -1;
+}
+
+extern void __assert_func(const char *file, int line, const char *func, const char *failedexpr) __attribute__((__noreturn__));
+
+__attribute__((__noreturn__))
+void __assert_fail(const char *assertion, const char *file, unsigned int line, const char *function) {
+    __assert_func(file, (int)line, function, assertion);
+}
+
+int dl_iterate_phdr(int (*callback)(void *info, size_t size, void *data), void *data) {
+    (void)callback; (void)data;
+    return 0;
+}
+
+void *dlsym(void *handle, const char *symbol) {
+    (void)handle; (void)symbol;
+    return NULL;
+}
+
+void *dlopen(const char *filename, int flag) {
+    (void)filename; (void)flag;
+    return NULL;
+}
+
+int dlclose(void *handle) {
+    (void)handle;
+    return 0;
+}
+
+char *dlerror(void) {
+    return "Dynamic linking not supported on baremetal Switch";
+}
+#endif
+
