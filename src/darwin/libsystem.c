@@ -1192,16 +1192,14 @@ const unsigned short **__ctype_b_loc(void) {
 extern locale_t _newlocale_r(struct _reent *, int, const char *, locale_t);
 
 locale_t newlocale(int category_mask, const char *locale, locale_t base) {
+    (void)category_mask; (void)locale; (void)base;
     init_glibc_ctype();
-    // Newlib solo admite bits de categoria hasta 0x7e.
-    // glibc y LLVM libc++ pasan 0x1fbf (LC_ALL_MASK). Enmascaramos a 0x7e para Newlib:
-    int newlib_mask = category_mask & 0x7e;
-    locale_t loc = _newlocale_r(_REENT, newlib_mask, locale ? locale : "C", base);
-    if (!loc) {
-        loc = _newlocale_r(_REENT, 0, "C", NULL);
-    }
+    // En Newlib, _newlocale_r(_REENT, 0, "C", NULL) devuelve directamente el objeto global _C_locale,
+    // que contiene todos los campos lconv completamente inicializados (decimal_point=".", etc.).
+    // Si se pasa una mascara parcial no nula, Newlib crea un objeto incompleto que carece de lconv.
+    locale_t loc = _newlocale_r(_REENT, 0, "C", NULL);
     if (loc) {
-        // libc++ (compilada para aarch64 Linux) espera el puntero a __ctype_b en el offset 0x68 de locale_t
+        // libc++ espera el puntero a __ctype_b en el offset 0x68 de locale_t
         *(const unsigned short **)((char *)loc + 0x68) = s_glibc_ctype_b_ptr;
     }
     return loc;
