@@ -210,15 +210,7 @@ int mo_load(const char *path, mo_image *img) {
     const size_t tramp_size = 0x40000;
     size_t reserve = (span + tramp_size + align + 0xFFF) & ~0xFFFULL;
 #ifdef __SWITCH__
-    virtmemLock();
-    void *map_addr = virtmemFindCodeMemory(reserve, 0x1000);
-    VirtmemReservation *rv = virtmemAddReservation(map_addr, reserve);
-    virtmemUnlock();
-    if (!map_addr || !rv) {
-        LOGE("macho: virtmemFindCodeMemory %zu falló", reserve);
-        return -1;
-    }
-
+    Handle proc = envGetOwnProcessHandle();
     uint8_t *raw = (uint8_t *)memalign(align, reserve);
     if (!raw) {
         LOGE("macho: memalign %zu falló", reserve);
@@ -226,7 +218,25 @@ int mo_load(const char *path, mo_image *img) {
     }
     memset(raw, 0, reserve);
 
-    uint8_t *base = (uint8_t *)map_addr;
+    uint8_t *base = raw;
+    void *map_addr = NULL;
+    VirtmemReservation *rv = NULL;
+
+    if (proc != 0 && proc != CUR_PROCESS_HANDLE) {
+        virtmemLock();
+        map_addr = virtmemFindCodeMemory(reserve, 0x1000);
+        rv = virtmemAddReservation(map_addr, reserve);
+        virtmemUnlock();
+        if (!map_addr || !rv) {
+            LOGE("macho: virtmemFindCodeMemory %zu falló", reserve);
+            free(raw);
+            return -1;
+        }
+        base = (uint8_t *)map_addr;
+    } else {
+        LOGI("macho: modo emulador detectado (proc=0x%x), ejecutando directamente desde heap", proc);
+    }
+
     img->src_heap = raw;
     img->code_mem = map_addr;
     img->map_reservation = rv;
@@ -419,8 +429,15 @@ int mo_bind(mo_image *img, mo_resolver resolve) {
 void mo_protect(mo_image *img) {
 #ifdef __SWITCH__
     Handle proc = envGetOwnProcessHandle();
-    if (proc == 0) proc = CUR_PROCESS_HANDLE;
     size_t total_reserve = img->reserve_size;
+
+    // Si estamos en modo emulador (sin code_mem / proc inválido), no llamamos a svcMapProcessCodeMemory
+    if (!img->code_mem || proc == 0 || proc == CUR_PROCESS_HANDLE) {
+        armDCacheFlush(img->src_heap, total_reserve);
+        armICacheInvalidate(img->src_heap, total_reserve);
+        LOGI("macho: emulador: caché sincronizada para %zu bytes en heap", total_reserve);
+        return;
+    }
 
     // 1. Limpiamos la caché de datos de todo el búfer de preparación en heap
     armDCacheFlush(img->src_heap, total_reserve);

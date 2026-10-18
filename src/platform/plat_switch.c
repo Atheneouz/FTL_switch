@@ -404,7 +404,6 @@ int main(int argc, char **argv) {
              : "Modo Applet / RAM Limitada");
 
     Handle proc = envGetOwnProcessHandle();
-    if (proc == 0) proc = CUR_PROCESS_HANDLE;
     LOGI("plat_switch: envGetOwnProcessHandle = 0x%08x", proc);
 
     u64 mem_available = 0, mem_used = 0;
