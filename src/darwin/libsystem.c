@@ -134,6 +134,10 @@ static const char *resolve_path(const char *path, char *out, size_t outsz, int f
         path += 2; // omitimos "./" y preservamos "sdmc:/..."
     } else if (strncmp(path, "./sdmc:", 7) == 0) {
         path += 2;
+    } else if (strncmp(path, "./romfs:/", 9) == 0) {
+        path += 2;
+    } else if (strncmp(path, "./romfs:", 8) == 0) {
+        path += 2;
     } else if (strncmp(path, "./", 2) == 0 && path[2] == '/') {
         path += 2;
     }
@@ -145,9 +149,17 @@ static const char *resolve_path(const char *path, char *out, size_t outsz, int f
     if (access(path, F_OK) == 0) return path;
 
 #ifdef __SWITCH__
-    // En Switch, toda ruta absoluta que empiece por '/' pertenece a la tarjeta MicroSD (sdmc:)
+    // En Switch, comprobamos si la ruta absoluta existe en sdmc: o romfs:
     if (path[0] == '/') {
         snprintf(out, outsz, "sdmc:%s", path);
+        if (for_write || access(out, F_OK) == 0) return out;
+
+        char romfs_out[512];
+        snprintf(romfs_out, sizeof(romfs_out), "romfs:%s", path);
+        if (access(romfs_out, F_OK) == 0) {
+            strncpy(out, romfs_out, outsz);
+            return out;
+        }
         return out;
     }
 #else
@@ -166,7 +178,9 @@ static const char *resolve_path(const char *path, char *out, size_t outsz, int f
 
     // 2. Buscamos primero en el paquete de la aplicación (bundle_path)
     if (g_bundle_path[0]) {
-        snprintf(out, outsz, "%s/%s", g_bundle_path, path);
+        size_t blen = strlen(g_bundle_path);
+        const char *sep = (blen > 0 && (g_bundle_path[blen - 1] == '/' || g_bundle_path[blen - 1] == ':')) ? "" : "/";
+        snprintf(out, outsz, "%s%s%s", g_bundle_path, sep, path);
         if (access(out, F_OK) == 0) return out;
         if (out[0] == '/') {
             char sdmc_out[512];
@@ -200,7 +214,9 @@ static const char *resolve_path(const char *path, char *out, size_t outsz, int f
 
     // 5. Fallback al directorio del bundle
     if (g_bundle_path[0]) {
-        snprintf(out, outsz, "%s/%s", g_bundle_path, path);
+        size_t blen = strlen(g_bundle_path);
+        const char *sep = (blen > 0 && (g_bundle_path[blen - 1] == '/' || g_bundle_path[blen - 1] == ':')) ? "" : "/";
+        snprintf(out, outsz, "%s%s%s", g_bundle_path, sep, path);
         return out;
     }
 

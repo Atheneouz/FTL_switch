@@ -353,6 +353,7 @@ void plat_pad_rumble(float strength, int ms) {
 // Sistema de registro a archivo en SD y consola
 // ---------------------------------------------------------------------------
 static FILE *s_logfile = NULL;
+static bool s_romfs_mounted = false;
 
 void switch_log_init(const char *path) {
     if (s_logfile) {
@@ -382,7 +383,7 @@ void switch_log(const char *prefix, const char *fmt, ...) {
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
 
-    // Creamos directorios de trabajo iniciales y abrimos el registro
+    // Creamos directorios de trabajo iniciales en la tarjeta MicroSD y abrimos el registro
     mkdir("sdmc:/switch", 0755);
     mkdir("sdmc:/switch/ftl", 0755);
     mkdir("sdmc:/switch/ftl/logs", 0755);
@@ -410,54 +411,92 @@ int main(int argc, char **argv) {
          mem_available / (1024 * 1024), mem_used / (1024 * 1024),
          (mem_available > mem_used ? (mem_available - mem_used) : 0) / (1024 * 1024));
 
-    // Rutas del juego en la tarjeta MicroSD con prefijo de dispositivo para devkitPro
-    const char *base_dir = "sdmc:/switch/ftl";
-    char bin_path[512], bundle_path[512], docs_path[512], cache_path[512], log_path[512];
+    // Montamos RomFS si está presente (para modo Standalone NSP o NRO con RomFS embebido)
+    Result rc_romfs = romfsInit();
+    if (R_SUCCEEDED(rc_romfs)) {
+        s_romfs_mounted = true;
+        LOGI("plat_switch: RomFS montado correctamente en 'romfs:/'");
+    } else {
+        LOGI("plat_switch: RomFS no presente (rc=0x%x), operamos desde almacenamiento MicroSD", rc_romfs);
+    }
 
-    snprintf(bin_path, sizeof(bin_path), "%s/FTL", base_dir);
-    snprintf(bundle_path, sizeof(bundle_path), "%s/FTL.app", base_dir);
-    snprintf(docs_path, sizeof(docs_path), "%s/save", base_dir);
-    snprintf(cache_path, sizeof(cache_path), "%s/cache", base_dir);
-    snprintf(log_path, sizeof(log_path), "%s/logs", base_dir);
+    // Las carpetas de escritura (partidas, cache y logs) siempre deben ir en MicroSD (RomFS es solo lectura)
+    const char *docs_path = "sdmc:/switch/ftl/save";
+    const char *cache_path = "sdmc:/switch/ftl/cache";
+    const char *log_path = "sdmc:/switch/ftl/logs";
 
-    // Comprobamos la presencia de los archivos del juego
+    char bin_path[512] = {0};
+    char bundle_path[512] = {0};
     struct stat st;
-    if (stat(bin_path, &st) != 0) {
-        char alt_bin[512];
-        snprintf(alt_bin, sizeof(alt_bin), "sdmc:%s", bin_path);
-        if (stat(alt_bin, &st) == 0) {
-            // El archivo es accesible a través del dispositivo sdmc:
-        } else if (stat("FTL", &st) == 0) {
+    bool found = false;
+
+    // 1. Buscamos primero en la particion virtual RomFS (modo Standalone NSP)
+    if (s_romfs_mounted) {
+        // Estructura A: romfs:/FTL y romfs:/FTL.app
+        if (stat("romfs:/FTL", &st) == 0 && stat("romfs:/FTL.app", &st) == 0) {
+            snprintf(bin_path, sizeof(bin_path), "romfs:/FTL");
+            snprintf(bundle_path, sizeof(bundle_path), "romfs:/FTL.app");
+            found = true;
+            LOGI("plat_switch: detectada estructura Standalone en romfs:/ (con FTL.app)");
+        }
+        // Estructura B: el binario esta dentro del bundle romfs:/FTL.app/FTL
+        else if (stat("romfs:/FTL.app/FTL", &st) == 0 && stat("romfs:/FTL.app", &st) == 0) {
+            snprintf(bin_path, sizeof(bin_path), "romfs:/FTL.app/FTL");
+            snprintf(bundle_path, sizeof(bundle_path), "romfs:/FTL.app");
+            found = true;
+            LOGI("plat_switch: detectada estructura Standalone en romfs:/FTL.app/");
+        }
+        // Estructura C: la raiz de romfs contiene directamente ftl.dat y el binario FTL
+        else if (stat("romfs:/FTL", &st) == 0 && stat("romfs:/ftl.dat", &st) == 0) {
+            snprintf(bin_path, sizeof(bin_path), "romfs:/FTL");
+            snprintf(bundle_path, sizeof(bundle_path), "romfs:/");
+            found = true;
+            LOGI("plat_switch: detectada estructura Standalone en la raiz de romfs:/");
+        }
+        // Estructura D: romfs:/ftl/FTL y romfs:/ftl/FTL.app
+        else if (stat("romfs:/ftl/FTL", &st) == 0 && stat("romfs:/ftl/FTL.app", &st) == 0) {
+            snprintf(bin_path, sizeof(bin_path), "romfs:/ftl/FTL");
+            snprintf(bundle_path, sizeof(bundle_path), "romfs:/ftl/FTL.app");
+            found = true;
+            LOGI("plat_switch: detectada estructura Standalone en romfs:/ftl/");
+        }
+    }
+
+    // 2. Si no se encuentra en RomFS, comprobamos la tarjeta MicroSD (modo Homebrew / Forwarder)
+    if (!found) {
+        const char *base_dir = "sdmc:/switch/ftl";
+        char sd_bin[512], sd_bundle[512];
+        snprintf(sd_bin, sizeof(sd_bin), "%s/FTL", base_dir);
+        snprintf(sd_bundle, sizeof(sd_bundle), "%s/FTL.app", base_dir);
+
+        if (stat(sd_bin, &st) == 0 && stat(sd_bundle, &st) == 0) {
+            snprintf(bin_path, sizeof(bin_path), "%s", sd_bin);
+            snprintf(bundle_path, sizeof(bundle_path), "%s", sd_bundle);
+            found = true;
+            LOGI("plat_switch: detectada estructura estandar en MicroSD (%s)", base_dir);
+        } else if (stat("FTL", &st) == 0 && stat("FTL.app", &st) == 0) {
             snprintf(bin_path, sizeof(bin_path), "FTL");
             snprintf(bundle_path, sizeof(bundle_path), "FTL.app");
-            snprintf(docs_path, sizeof(docs_path), "save");
-            snprintf(cache_path, sizeof(cache_path), "cache");
-            snprintf(log_path, sizeof(log_path), "logs");
-        } else {
-            port_fatal("No se encuentra el binario ejecutable 'FTL' en:\n  %s\n\n"
-                       "Asegúrate de copiar la carpeta 'ftl' completa dentro de sdmc:/switch/.", bin_path);
-            return 1;
+            found = true;
+            LOGI("plat_switch: detectada estructura en directorio local");
         }
     }
-    LOGI("plat_switch: Binario 'FTL' encontrado (%lld bytes)", (long long)st.st_size);
 
-    if (stat(bundle_path, &st) != 0) {
-        char alt_bundle[512];
-        snprintf(alt_bundle, sizeof(alt_bundle), "sdmc:%s", bundle_path);
-        if (stat(alt_bundle, &st) != 0) {
-            port_fatal("No se encuentra la carpeta de recursos 'FTL.app' en:\n  %s\n\n"
-                       "Asegúrate de copiar FTL.app dentro de sdmc:/switch/ftl/.", bundle_path);
-            return 1;
-        }
+    if (!found) {
+        port_fatal("No se encuentran los archivos de datos del juego ('FTL' y 'FTL.app').\n\n"
+                   "Para Standalone NSP: asegurate de incluir 'FTL' y 'FTL.app' en la particion RomFS.\n"
+                   "Para Homebrew / Forwarder: copia la carpeta 'ftl' completa dentro de 'sdmc:/switch/'.");
+        return 1;
     }
-    LOGI("plat_switch: Carpeta de recursos 'FTL.app' encontrada");
+
+    LOGI("plat_switch: Binario ejecutable seleccionado: '%s'", bin_path);
+    LOGI("plat_switch: Carpeta de recursos seleccionada: '%s'", bundle_path);
 
     // Cambiamos el directorio activo para resolución de rutas relativas
-    if (chdir(bundle_path) == 0 || chdir("sdmc:/switch/ftl/FTL.app") == 0) {
+    if (chdir(bundle_path) == 0) {
         LOGI("plat_switch: Directorio activo cambiado a '%s'", bundle_path);
     } else {
-        chdir(base_dir);
-        LOGW("plat_switch: No se pudo cambiar a '%s', usando '%s'", bundle_path, base_dir);
+        LOGW("plat_switch: No se pudo cambiar el directorio activo a '%s'", bundle_path);
     }
 
     // Inicializamos la lectura de mandos y pantalla táctil
@@ -599,6 +638,12 @@ void port_on_game_exit(int code) {
     if (g_surf != EGL_NO_SURFACE) { eglDestroySurface(g_dpy, g_surf); g_surf = EGL_NO_SURFACE; }
     if (g_ctx != EGL_NO_CONTEXT) { eglDestroyContext(g_dpy, g_ctx); g_ctx = EGL_NO_CONTEXT; }
     if (g_dpy != EGL_NO_DISPLAY) { eglTerminate(g_dpy); g_dpy = EGL_NO_DISPLAY; }
+
+    if (s_romfs_mounted) {
+        romfsExit();
+        s_romfs_mounted = false;
+        LOGI("plat_switch: RomFS desmontado correctamente");
+    }
 
     if (s_logfile) {
         fflush(s_logfile);

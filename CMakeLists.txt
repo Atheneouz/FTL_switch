@@ -126,6 +126,15 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
         set(OPTIONAL_ICON "")
     endif()
 
+    set(ROMFS_DIR "" CACHE PATH "Directorio opcional con recursos RomFS para incrustar en el NRO")
+    if(ROMFS_DIR)
+        set(OPTIONAL_ROMFS ROMFS "${ROMFS_DIR}")
+        set(OPTIONAL_ELF2NRO_ROMFS "--romfsdir=${ROMFS_DIR}")
+    else()
+        set(OPTIONAL_ROMFS "")
+        set(OPTIONAL_ELF2NRO_ROMFS "")
+    endif()
+
     if(COMMAND nx_create_nro)
         # Macro nativa de devkitPro CMake
         nx_create_nro(ftl
@@ -133,6 +142,7 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
             AUTHOR "${APP_AUTHOR}"
             VERSION "${APP_VERSION}"
             ${OPTIONAL_ICON}
+            ${OPTIONAL_ROMFS}
         )
     else()
         # Fallback mediante comandos directos de devkitPro
@@ -140,6 +150,7 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
             COMMAND nacptool --create "${APP_TITLE}" "${APP_AUTHOR}" "${APP_VERSION}" ftl.nacp
             COMMAND elf2nro ftl.elf ftl.nro --nacp=ftl.nacp
                 $<$<BOOL:${APP_ICON}>:--icon=${APP_ICON}>
+                $<$<BOOL:${ROMFS_DIR}>:${OPTIONAL_ELF2NRO_ROMFS}>
             COMMENT "Generando ftl.nro para Nintendo Switch"
         )
     endif()
