@@ -24,6 +24,7 @@
 #ifdef __SWITCH__
 #include <switch.h>
 #include <malloc.h>
+#include <locale.h>
 #endif
 
 #include "port_log.h"
@@ -1141,6 +1142,94 @@ ssize_t pwrite(int fd, const void *buf, size_t n, off_t off) {
     ssize_t r = write(fd, buf, n);
     lseek(fd, orig, SEEK_SET);
     return r;
+}
+
+static unsigned short s_glibc_ctype_b_tab[384];
+static const unsigned short *s_glibc_ctype_b_ptr = s_glibc_ctype_b_tab + 128;
+static int s_glibc_ctype_inited = 0;
+
+static inline unsigned short glibc_bit(int b) {
+    return (b < 8) ? ((unsigned short)(1 << b) << 8) : ((unsigned short)(1 << b) >> 8);
+}
+
+static void init_glibc_ctype(void) {
+    if (s_glibc_ctype_inited) return;
+    s_glibc_ctype_inited = 1;
+    unsigned short u = glibc_bit(0);   // _ISupper
+    unsigned short l = glibc_bit(1);   // _ISlower
+    unsigned short a = glibc_bit(2);   // _ISalpha
+    unsigned short d = glibc_bit(3);   // _ISdigit
+    unsigned short x = glibc_bit(4);   // _ISxdigit
+    unsigned short s = glibc_bit(5);   // _ISspace
+    unsigned short p = glibc_bit(6);   // _ISprint
+    unsigned short g = glibc_bit(7);   // _ISgraph
+    unsigned short b = glibc_bit(8);   // _ISblank
+    unsigned short c = glibc_bit(9);   // _IScntrl
+    unsigned short pu = glibc_bit(10); // _ISpunct
+    unsigned short al = glibc_bit(11); // _ISalnum
+
+    for (int ch = 0; ch < 256; ch++) {
+        unsigned short mask = 0;
+        if (ch >= 'A' && ch <= 'Z') mask |= u | a | al | p | g;
+        if (ch >= 'a' && ch <= 'z') mask |= l | a | al | p | g;
+        if (ch >= '0' && ch <= '9') mask |= d | al | p | g;
+        if ((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')) mask |= x;
+        if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n' || ch == '\v' || ch == '\f') mask |= s;
+        if (ch == ' ' || ch == '\t') mask |= b;
+        if (ch < 32 || ch == 127) mask |= c;
+        if ((ch >= 33 && ch <= 47) || (ch >= 58 && ch <= 64) || (ch >= 91 && ch <= 96) || (ch >= 123 && ch <= 126)) {
+            mask |= pu | p | g;
+        }
+        s_glibc_ctype_b_tab[128 + ch] = mask;
+    }
+}
+
+const unsigned short **__ctype_b_loc(void) {
+    init_glibc_ctype();
+    return &s_glibc_ctype_b_ptr;
+}
+
+extern locale_t _newlocale_r(struct _reent *, int, const char *, locale_t);
+
+locale_t newlocale(int category_mask, const char *locale, locale_t base) {
+    init_glibc_ctype();
+    // Newlib solo admite bits de categoria hasta 0x7e.
+    // glibc y LLVM libc++ pasan 0x1fbf (LC_ALL_MASK). Enmascaramos a 0x7e para Newlib:
+    int newlib_mask = category_mask & 0x7e;
+    locale_t loc = _newlocale_r(_REENT, newlib_mask, locale ? locale : "C", base);
+    if (!loc) {
+        loc = _newlocale_r(_REENT, 0, "C", NULL);
+    }
+    if (loc) {
+        // libc++ (compilada para aarch64 Linux) espera el puntero a __ctype_b en el offset 0x68 de locale_t
+        *(const unsigned short **)((char *)loc + 0x68) = s_glibc_ctype_b_ptr;
+    }
+    return loc;
+}
+
+void freelocale(locale_t loc) {
+    (void)loc;
+}
+
+locale_t uselocale(locale_t loc) {
+    init_glibc_ctype();
+    static locale_t s_cur_loc = NULL;
+    if (!s_cur_loc) {
+        s_cur_loc = newlocale(0, "C", NULL);
+    }
+    locale_t prev = s_cur_loc;
+    if (loc != (locale_t)0 && loc != (locale_t)-1) {
+        s_cur_loc = loc;
+        if (s_cur_loc) {
+            *(const unsigned short **)((char *)s_cur_loc + 0x68) = s_glibc_ctype_b_ptr;
+        }
+    }
+    return prev;
+}
+
+locale_t duplocale(locale_t loc) {
+    if (!loc) loc = uselocale(0);
+    return loc;
 }
 #endif
 
