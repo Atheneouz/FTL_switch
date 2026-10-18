@@ -131,27 +131,32 @@ static const char *resolve_path(const char *path, char *out, size_t outsz, int f
 
     // Normalizamos prefijos erróneos generados por código relativo de FTL
     if (strncmp(path, "./sdmc:/", 8) == 0) {
-        path += 7; // queda "/..."
+        path += 2; // omitimos "./" y preservamos "sdmc:/..."
     } else if (strncmp(path, "./sdmc:", 7) == 0) {
-        path += 7;
-    } else if (strncmp(path, "sdmc:/", 6) == 0) {
-        path += 5; // queda "/..."
+        path += 2;
     } else if (strncmp(path, "./", 2) == 0 && path[2] == '/') {
         path += 2;
     }
 
+    // Si ya tiene esquema de dispositivo (sdmc:/, romfs:/ etc.), lo respetamos directamente
+    if (strstr(path, ":/")) return path;
+
     // Si el archivo ya es accesible directamente en la ruta especificada, lo respetamos
     if (access(path, F_OK) == 0) return path;
 
-    // Si empieza por "/" y no existe directamente, comprobamos con el prefijo "sdmc:"
+#ifdef __SWITCH__
+    // En Switch, toda ruta absoluta que empiece por '/' pertenece a la tarjeta MicroSD (sdmc:)
+    if (path[0] == '/') {
+        snprintf(out, outsz, "sdmc:%s", path);
+        return out;
+    }
+#else
     if (path[0] == '/') {
         snprintf(out, outsz, "sdmc:%s", path);
         if (access(out, F_OK) == 0) return out;
         return path;
     }
-
-    // Si tiene esquema de dispositivo (romfs:/ etc.), no lo modificamos
-    if (strstr(path, ":/")) return path;
+#endif
 
     // 1. Si es para escritura y tenemos directorio de documentos, guardamos allí
     if (for_write && g_docs_path[0]) {

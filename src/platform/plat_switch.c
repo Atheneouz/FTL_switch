@@ -410,8 +410,8 @@ int main(int argc, char **argv) {
          mem_available / (1024 * 1024), mem_used / (1024 * 1024),
          (mem_available > mem_used ? (mem_available - mem_used) : 0) / (1024 * 1024));
 
-    // Rutas del juego en la tarjeta MicroSD (con '/' inicial para compatibilidad con código POSIX de FTL)
-    const char *base_dir = "/switch/ftl";
+    // Rutas del juego en la tarjeta MicroSD con prefijo de dispositivo para devkitPro
+    const char *base_dir = "sdmc:/switch/ftl";
     char bin_path[512], bundle_path[512], docs_path[512], cache_path[512], log_path[512];
 
     snprintf(bin_path, sizeof(bin_path), "%s/FTL", base_dir);
