@@ -122,14 +122,65 @@ static int oflags_to_darwin(int f) {
     return r;
 }
 
+extern char g_bundle_path[512];
+extern char g_docs_path[512];
+
+static const char *resolve_path(const char *path, char *out, size_t outsz, int for_write) {
+    if (!path || !*path) return path;
+
+    // Si el archivo ya es accesible directamente en la ruta especificada, lo respetamos
+    if (access(path, F_OK) == 0) return path;
+
+    // Si es una ruta absoluta o con esquema de dispositivo (sdmc:/, romfs:/), no la modificamos
+    if (path[0] == '/' || strstr(path, ":/")) return path;
+
+    // 1. Si es para escritura y tenemos directorio de documentos, guardamos allí
+    if (for_write && g_docs_path[0]) {
+        snprintf(out, outsz, "%s/%s", g_docs_path, path);
+        return out;
+    }
+
+    // 2. Buscamos primero en el paquete de la aplicación (bundle_path)
+    if (g_bundle_path[0]) {
+        snprintf(out, outsz, "%s/%s", g_bundle_path, path);
+        if (access(out, F_OK) == 0) return out;
+    }
+
+    // 3. Buscamos en el directorio de guardado/documentos
+    if (g_docs_path[0]) {
+        snprintf(out, outsz, "%s/%s", g_docs_path, path);
+        if (access(out, F_OK) == 0) return out;
+    }
+
+    // 4. Si es para escritura y no existía previamente
+    if (for_write && g_docs_path[0]) {
+        snprintf(out, outsz, "%s/%s", g_docs_path, path);
+        return out;
+    }
+
+    // 5. Fallback al directorio del bundle
+    if (g_bundle_path[0]) {
+        snprintf(out, outsz, "%s/%s", g_bundle_path, path);
+        return out;
+    }
+
+    return path;
+}
+
 static int g_iotrace = -1;
 static int iotrace(void) {
     if (g_iotrace < 0) g_iotrace = getenv("FTL_IOTRACE") != NULL;
     return g_iotrace;
 }
 int darwin_open_impl(const char *path, int flags, int mode) {
-    int fd = open(path, oflags_from_darwin(flags), mode);
-    if (iotrace()) LOGI("iotrace open(%s, %#x) = %d", path, flags, fd);
+    char rpath[512];
+    int host_flags = oflags_from_darwin(flags);
+    int for_write = (host_flags & (O_WRONLY | O_RDWR | O_CREAT)) != 0;
+    const char *p = resolve_path(path, rpath, sizeof(rpath), for_write);
+    int fd = open(p, host_flags, mode);
+    if (iotrace() || fd < 0) {
+        LOGI("open(%s%s%s, %#x) = %d", path, p != path ? " -> " : "", p != path ? p : "", flags, fd);
+    }
     return fd;
 }
 ssize_t darwin_pread(int fd, void *buf, size_t n, off_t off) {
@@ -204,16 +255,27 @@ static void stat_to_darwin(const struct stat *s, struct darwin_stat *d) {
 }
 
 int darwin_stat(const char *path, struct darwin_stat *out) {
+    char rpath[512];
+    const char *p = resolve_path(path, rpath, sizeof(rpath), 0);
     struct stat s;
-    int r = stat(path, &s);
+    int r = stat(p, &s);
     if (r == 0) stat_to_darwin(&s, out);
-    LOGV("stat(%s) = %d", path, r);
+    LOGV("stat(%s [%s]) = %d", path, p, r);
     return r;
 }
 int darwin_lstat(const char *path, struct darwin_stat *out) {
+    char rpath[512];
+    const char *p = resolve_path(path, rpath, sizeof(rpath), 0);
     struct stat s;
-    int r = lstat(path, &s);
+    int r = lstat(p, &s);
     if (r == 0) stat_to_darwin(&s, out);
+    return r;
+}
+int darwin_access(const char *path, int mode) {
+    char rpath[512];
+    const char *p = resolve_path(path, rpath, sizeof(rpath), (mode & W_OK) != 0);
+    int r = access(p, mode);
+    LOGV("access(%s [%s], %d) = %d", path, p, mode, r);
     return r;
 }
 int darwin_fstat(int fd, struct darwin_stat *out) {
@@ -234,7 +296,9 @@ struct darwin_dirent {
 typedef struct { DIR *dir; struct darwin_dirent ent; } darwin_DIR;
 
 void *darwin_opendir(const char *path) {
-    DIR *d = opendir(path);
+    char rpath[512];
+    const char *p = resolve_path(path, rpath, sizeof(rpath), 0);
+    DIR *d = opendir(p);
     if (!d) return NULL;
     darwin_DIR *w = calloc(1, sizeof(*w));
     w->dir = d;
@@ -263,8 +327,13 @@ int darwin_closedir(void *vd) {
 }
 
 FILE *darwin_fopen(const char *path, const char *mode) {
-    FILE *f = fopen(path, mode);
-    LOGV("fopen(%s, %s) = %p", path, mode, (void *)f);
+    char rpath[512];
+    int for_write = mode && (strchr(mode, 'w') || strchr(mode, 'a') || strchr(mode, '+'));
+    const char *p = resolve_path(path, rpath, sizeof(rpath), for_write);
+    FILE *f = fopen(p, mode);
+    if (iotrace() || !f) {
+        LOGI("fopen(%s%s%s, %s) = %p", path, p != path ? " -> " : "", p != path ? p : "", mode, (void *)f);
+    }
     return f;
 }
 

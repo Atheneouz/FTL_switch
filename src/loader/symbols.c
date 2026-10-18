@@ -32,7 +32,7 @@ X(darwin_open) X(darwin_fcntl) X(darwin_sprintf_chk) X(darwin_asprintf) X(darwin
 X(darwin_printf) X(darwin_fprintf) X(darwin_sscanf) X(darwin_setjmp) X(darwin_longjmp) X(darwin_sincosf_stret)
 X(darwin_sincos_stret) X(darwin_NSLog)
 X(darwin___error) X(darwin_stat) X(darwin_lstat) X(darwin_fstat) X(darwin_opendir) X(darwin_readdir)
-X(darwin_closedir) X(darwin_fopen) X(darwin_mkdir) X(darwin_assert_rtn) X(darwin_stack_chk_guard)
+X(darwin_closedir) X(darwin_fopen) X(darwin_access) X(darwin_mkdir) X(darwin_assert_rtn) X(darwin_stack_chk_guard)
 X(darwin_stack_chk_fail) X(darwin_memcpy_chk) X(darwin_memmove_chk) X(darwin_memset_chk)
 X(darwin_memset_pattern16) X(darwin_bzero) X(darwin_exp10) X(darwin_OSMemoryBarrier) X(darwin_rand)
 X(darwin_srand) X(darwin_sysconf) X(darwin_sysctlbyname) X(darwin_dyld_register_func_for_add_image)
@@ -100,7 +100,7 @@ Y(_Block_copy) Y(_Block_release)
 
 static const sym_entry g_syms[] = {
     // ---- libSystem: straight host mappings ----
-    S(abort), S(access), S(acosf), S(asinf), S(atan2f), S(atanf), S(atoi), S(atol), S(atof), S(calloc), S(close),
+    S(abort), D(access, darwin_access), S(acosf), S(asinf), S(atan2f), S(atanf), S(atoi), S(atol), S(atof), S(calloc), S(close),
     S(cosf), S(cos), S(sin), S(tan), S(dup), S(expf), S(exp), S(fclose), S(fmod), S(fmodf), S(fread), S(fwrite),
     S(fseek), S(ftell), S(fflush), S(fgets), S(fputs), S(free), D(gettimeofday, darwin_gettimeofday), S(ldexpf), S(log10), S(log10f),
     S(logf), S(log), D(lseek, darwin_lseek), S(malloc), S(memchr), S(memcmp), S(memcpy), S(memmove), S(memset), S(nanosleep),

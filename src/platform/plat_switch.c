@@ -404,6 +404,7 @@ int main(int argc, char **argv) {
              : "Modo Applet / RAM Limitada");
 
     Handle proc = envGetOwnProcessHandle();
+    if (proc == 0) proc = CUR_PROCESS_HANDLE;
     LOGI("plat_switch: envGetOwnProcessHandle = 0x%08x", proc);
 
     u64 mem_available = 0, mem_used = 0;
@@ -447,8 +448,13 @@ int main(int argc, char **argv) {
     }
     LOGI("plat_switch: Carpeta de recursos 'FTL.app' encontrada");
 
-    // Inicializamos el sistema de archivos romfs si existe
-    romfsInit();
+    // Cambiamos el directorio activo para resolución de rutas relativas
+    if (chdir(bundle_path) == 0) {
+        LOGI("plat_switch: Directorio activo cambiado a '%s'", bundle_path);
+    } else {
+        chdir(base_dir);
+        LOGW("plat_switch: No se pudo cambiar a '%s', usando '%s'", bundle_path, base_dir);
+    }
 
     // Inicializamos la lectura de mandos y pantalla táctil
     padConfigureInput(1, HidNpadStyleSet_NpadStandard);
@@ -533,7 +539,6 @@ int main(int argc, char **argv) {
 
     if (g_audio_dev) SDL_CloseAudioDevice(g_audio_dev);
     SDL_Quit();
-    romfsExit();
 
     if (s_logfile) {
         fclose(s_logfile);

@@ -419,6 +419,7 @@ int mo_bind(mo_image *img, mo_resolver resolve) {
 void mo_protect(mo_image *img) {
 #ifdef __SWITCH__
     Handle proc = envGetOwnProcessHandle();
+    if (proc == 0) proc = CUR_PROCESS_HANDLE;
     size_t total_reserve = img->reserve_size;
 
     // 1. Limpiamos la caché de datos de todo el búfer de preparación en heap
