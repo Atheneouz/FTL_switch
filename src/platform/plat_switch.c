@@ -536,18 +536,8 @@ int main(int argc, char **argv) {
     int ret = port_run_game(&cfg);
 
     // Limpieza al salir
-    if (g_surf != EGL_NO_SURFACE) eglDestroySurface(g_dpy, g_surf);
-    if (g_ctx != EGL_NO_CONTEXT) eglDestroyContext(g_dpy, g_ctx);
-    if (g_dpy != EGL_NO_DISPLAY) eglTerminate(g_dpy);
-
-    if (g_audio_dev) SDL_CloseAudioDevice(g_audio_dev);
-    SDL_Quit();
-
-    if (s_logfile) {
-        fclose(s_logfile);
-        s_logfile = NULL;
-    }
-
+    port_on_game_exit(ret);
+    svcExitProcess();
     return ret;
 }
 
@@ -595,7 +585,21 @@ void port_report_fatal(const char *msg) {
 }
 
 void port_on_game_exit(int code) {
+    static bool s_exited = false;
+    if (s_exited) return;
+    s_exited = true;
+
     LOGI("plat_switch: salida del juego con código %d", code);
+    if (g_audio_dev) {
+        SDL_CloseAudioDevice(g_audio_dev);
+        g_audio_dev = 0;
+    }
+    SDL_Quit();
+
+    if (g_surf != EGL_NO_SURFACE) { eglDestroySurface(g_dpy, g_surf); g_surf = EGL_NO_SURFACE; }
+    if (g_ctx != EGL_NO_CONTEXT) { eglDestroyContext(g_dpy, g_ctx); g_ctx = EGL_NO_CONTEXT; }
+    if (g_dpy != EGL_NO_DISPLAY) { eglTerminate(g_dpy); g_dpy = EGL_NO_DISPLAY; }
+
     if (s_logfile) {
         fflush(s_logfile);
         fclose(s_logfile);

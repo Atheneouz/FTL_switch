@@ -1012,7 +1012,11 @@ void darwin_libsystem_init(void) {
 void darwin_exit(int code) {
     LOGI("game called exit(%d)", code);
     port_on_game_exit(code);
+#ifdef __SWITCH__
+    svcExitProcess();
+#else
     exit(code);
+#endif
 }
 
 #ifdef __SWITCH__
