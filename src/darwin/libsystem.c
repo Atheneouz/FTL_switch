@@ -688,7 +688,7 @@ int darwin_pthread_create(pthread_t *th, const d_attr_t *a, void *(*fn)(void *),
     pthread_attr_t ha;
     pthread_attr_init(&ha);
     size_t ss = (a && a->sig == SIG_ATTR && a->stacksize) ? a->stacksize : 0;
-    if (ss < 1024 * 1024) ss = 1024 * 1024;  // iOS secondary threads default to 512K; be generous
+    if (ss < 8 * 1024 * 1024) ss = 8 * 1024 * 1024;  // LoadAnimations reserva 68 KB en su propio marco + RapidXML recursivo; 1 MB no basta
     pthread_attr_setstacksize(&ha, ss);
     if (a && a->sig == SIG_ATTR && a->detached) pthread_attr_setdetachstate(&ha, PTHREAD_CREATE_DETACHED);
     thread_start *ts = malloc(sizeof(*ts));
