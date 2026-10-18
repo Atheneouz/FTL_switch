@@ -19,20 +19,11 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Instalar dependencias del sistema y de Switch
+      - name: Instalar dependencias del sistema y herramientas de compilación
         run: |
           apt-get update && apt-get install -y \
             cmake ninja-build curl xz-utils patch clang lld python3 \
             gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross
-          dkp-pacman -Syu --noconfirm
-          dkp-pacman -S --needed --noconfirm \
-            switch-mesa \
-            switch-glad \
-            switch-sdl2 \
-            switch-tools \
-            libnx \
-            switch-libdrm_nouveau \
-            switch-zlib
 
       - name: Preparar y compilar libcxx con Apple ABI
         run: |
