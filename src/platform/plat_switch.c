@@ -86,18 +86,10 @@ void plat_pump_events(void) {
     }
 
     // Comprobamos cambios en el modo de funcionamiento (portátil vs dock)
+    // Mantenemos 1280x720 de forma constante ya que FTL de iPad renderiza internamente a 720p
+    // y el sistema Horizon escala automáticamente la imagen a 1080p en el televisor.
     AppletOperationMode op_mode = appletGetOperationMode();
-    int target_w = (op_mode == AppletOperationMode_Console) ? 1920 : 1280;
-    int target_h = (op_mode == AppletOperationMode_Console) ? 1080 : 720;
-    if (target_w != g_sw || target_h != g_sh) {
-        g_sw = target_w;
-        g_sh = target_h;
-        nwindowSetDimensions(nwindowGetDefault(), g_sw, g_sh);
-        float layout[8] = {0, 0, 0, 0, 300, (float)g_sh, 0};
-        ux_configure(g_sw, g_sh, 60, layout);
-        LOGI("plat_switch: resolución actualizada a %dx%d (%s)", g_sw, g_sh,
-             (op_mode == AppletOperationMode_Console) ? "Dock" : "Portátil");
-    }
+    (void)op_mode;
 
     // 1. Lectura de mandos
     padUpdate(&g_pad);
@@ -413,8 +405,8 @@ int main(int argc, char **argv) {
          mem_available / (1024 * 1024), mem_used / (1024 * 1024),
          (mem_available > mem_used ? (mem_available - mem_used) : 0) / (1024 * 1024));
 
-    // Rutas del juego en la tarjeta MicroSD
-    const char *base_dir = "sdmc:/switch/ftl";
+    // Rutas del juego en la tarjeta MicroSD (con '/' inicial para compatibilidad con código POSIX de FTL)
+    const char *base_dir = "/switch/ftl";
     char bin_path[512], bundle_path[512], docs_path[512], cache_path[512], log_path[512];
 
     snprintf(bin_path, sizeof(bin_path), "%s/FTL", base_dir);
@@ -426,7 +418,11 @@ int main(int argc, char **argv) {
     // Comprobamos la presencia de los archivos del juego
     struct stat st;
     if (stat(bin_path, &st) != 0) {
-        if (stat("FTL", &st) == 0) {
+        char alt_bin[512];
+        snprintf(alt_bin, sizeof(alt_bin), "sdmc:%s", bin_path);
+        if (stat(alt_bin, &st) == 0) {
+            // El archivo es accesible a través del dispositivo sdmc:
+        } else if (stat("FTL", &st) == 0) {
             snprintf(bin_path, sizeof(bin_path), "FTL");
             snprintf(bundle_path, sizeof(bundle_path), "FTL.app");
             snprintf(docs_path, sizeof(docs_path), "save");
@@ -441,14 +437,18 @@ int main(int argc, char **argv) {
     LOGI("plat_switch: Binario 'FTL' encontrado (%lld bytes)", (long long)st.st_size);
 
     if (stat(bundle_path, &st) != 0) {
-        port_fatal("No se encuentra la carpeta de recursos 'FTL.app' en:\n  %s\n\n"
-                   "Asegúrate de copiar FTL.app dentro de sdmc:/switch/ftl/.", bundle_path);
-        return 1;
+        char alt_bundle[512];
+        snprintf(alt_bundle, sizeof(alt_bundle), "sdmc:%s", bundle_path);
+        if (stat(alt_bundle, &st) != 0) {
+            port_fatal("No se encuentra la carpeta de recursos 'FTL.app' en:\n  %s\n\n"
+                       "Asegúrate de copiar FTL.app dentro de sdmc:/switch/ftl/.", bundle_path);
+            return 1;
+        }
     }
     LOGI("plat_switch: Carpeta de recursos 'FTL.app' encontrada");
 
     // Cambiamos el directorio activo para resolución de rutas relativas
-    if (chdir(bundle_path) == 0) {
+    if (chdir(bundle_path) == 0 || chdir("sdmc:/switch/ftl/FTL.app") == 0) {
         LOGI("plat_switch: Directorio activo cambiado a '%s'", bundle_path);
     } else {
         chdir(base_dir);
@@ -460,10 +460,9 @@ int main(int argc, char **argv) {
     padInitializeDefault(&g_pad);
     hidInitializeTouchScreen();
 
-    // Detectamos resolución inicial según el modo dock o portátil
-    AppletOperationMode op_mode = appletGetOperationMode();
-    g_sw = (op_mode == AppletOperationMode_Console) ? 1920 : 1280;
-    g_sh = (op_mode == AppletOperationMode_Console) ? 1080 : 720;
+    // Fijamos 1280x720 (720p nativo del binario de iPad) para evitar desajustes de búfer
+    g_sw = 1280;
+    g_sh = 720;
 
     // Configuramos la ventana y contexto EGL
     NWindow *win = nwindowGetDefault();

@@ -128,11 +128,29 @@ extern char g_docs_path[512];
 static const char *resolve_path(const char *path, char *out, size_t outsz, int for_write) {
     if (!path || !*path) return path;
 
+    // Normalizamos prefijos erróneos generados por código relativo de FTL
+    if (strncmp(path, "./sdmc:/", 8) == 0) {
+        path += 7; // queda "/..."
+    } else if (strncmp(path, "./sdmc:", 7) == 0) {
+        path += 7;
+    } else if (strncmp(path, "sdmc:/", 6) == 0) {
+        path += 5; // queda "/..."
+    } else if (strncmp(path, "./", 2) == 0 && path[2] == '/') {
+        path += 2;
+    }
+
     // Si el archivo ya es accesible directamente en la ruta especificada, lo respetamos
     if (access(path, F_OK) == 0) return path;
 
-    // Si es una ruta absoluta o con esquema de dispositivo (sdmc:/, romfs:/), no la modificamos
-    if (path[0] == '/' || strstr(path, ":/")) return path;
+    // Si empieza por "/" y no existe directamente, comprobamos con el prefijo "sdmc:"
+    if (path[0] == '/') {
+        snprintf(out, outsz, "sdmc:%s", path);
+        if (access(out, F_OK) == 0) return out;
+        return path;
+    }
+
+    // Si tiene esquema de dispositivo (romfs:/ etc.), no lo modificamos
+    if (strstr(path, ":/")) return path;
 
     // 1. Si es para escritura y tenemos directorio de documentos, guardamos allí
     if (for_write && g_docs_path[0]) {
@@ -144,12 +162,28 @@ static const char *resolve_path(const char *path, char *out, size_t outsz, int f
     if (g_bundle_path[0]) {
         snprintf(out, outsz, "%s/%s", g_bundle_path, path);
         if (access(out, F_OK) == 0) return out;
+        if (out[0] == '/') {
+            char sdmc_out[512];
+            snprintf(sdmc_out, sizeof(sdmc_out), "sdmc:%s", out);
+            if (access(sdmc_out, F_OK) == 0) {
+                strncpy(out, sdmc_out, outsz);
+                return out;
+            }
+        }
     }
 
     // 3. Buscamos en el directorio de guardado/documentos
     if (g_docs_path[0]) {
         snprintf(out, outsz, "%s/%s", g_docs_path, path);
         if (access(out, F_OK) == 0) return out;
+        if (out[0] == '/') {
+            char sdmc_out[512];
+            snprintf(sdmc_out, sizeof(sdmc_out), "sdmc:%s", out);
+            if (access(sdmc_out, F_OK) == 0) {
+                strncpy(out, sdmc_out, outsz);
+                return out;
+            }
+        }
     }
 
     // 4. Si es para escritura y no existía previamente
@@ -338,8 +372,10 @@ FILE *darwin_fopen(const char *path, const char *mode) {
 }
 
 int darwin_mkdir(const char *path, int mode) {
-    int r = mkdir(path, (mode_t)mode);
-    LOGV("mkdir(%s) = %d", path, r);
+    char rpath[512];
+    const char *p = resolve_path(path, rpath, sizeof(rpath), 1);
+    int r = mkdir(p, (mode_t)mode);
+    LOGV("mkdir(%s [%s]) = %d", path, p, r);
     return r;
 }
 

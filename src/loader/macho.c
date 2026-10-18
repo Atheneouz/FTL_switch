@@ -82,6 +82,11 @@ static int64_t sleb(const uint8_t **pp, const uint8_t *end) {
 
 static void *read_file(const char *path, size_t *size) {
     int fd = open(path, O_RDONLY | O_CLOEXEC);
+    if (fd < 0 && path && path[0] == '/') {
+        char alt[512];
+        snprintf(alt, sizeof(alt), "sdmc:%s", path);
+        fd = open(alt, O_RDONLY | O_CLOEXEC);
+    }
     if (fd < 0) return NULL;
     struct stat st;
     if (fstat(fd, &st) != 0) { close(fd); return NULL; }
