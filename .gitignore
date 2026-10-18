@@ -1,0 +1,24 @@
+# Repositorios aguas arriba y archivos grandes de juego
+ftl-android-upstream/
+ipa/*.ipa
+*.ipa
+*.zip
+*.tar.*
+
+# Directorios de compilación
+build/
+build-*/
+out/
+cmake-build-*/
+.cache/
+
+# Binarios generados
+*.elf
+*.nro
+*.nacp
+
+# Archivos de entorno y temporales del sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.orig

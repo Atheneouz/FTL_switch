@@ -1,0 +1,94 @@
+name: Build Nintendo Switch Homebrew (ftl.nro)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-switch:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:latest
+
+    steps:
+      - name: Descargar código del repositorio
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Instalar dependencias de Nintendo Switch
+        run: |
+          dkp-pacman -Syu --noconfirm
+          dkp-pacman -S --needed --noconfirm \
+            switch-mesa \
+            switch-glad \
+            switch-sdl2 \
+            switch-tools \
+            libnx \
+            switch-libdrm_nouveau \
+            switch-zlib \
+            ninja \
+            cmake
+
+      - name: Preparar y compilar libcxx con Apple ABI
+        run: |
+          echo "Preparando LLVM sources para libcxx con Apple ABI..."
+          mkdir -p /tmp/llvm-src
+          curl -sL https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/llvm-project-19.1.7.src.tar.xz | tar -xJ -C /tmp/llvm-src --strip-components=1
+          
+          # Aplicamos el parche de ABI de Apple para FTL
+          patch -d /tmp/llvm-src -p1 -N < libcxx/llvm-19.1.7-ftl.patch || true
+          
+          mkdir -p /tmp/libcxx-build /tmp/libcxx-out
+          cmake -G Ninja -S /tmp/llvm-src/runtimes -B /tmp/libcxx-build \
+            -DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/Switch.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/tmp/libcxx-out \
+            -DLLVM_ENABLE_RUNTIMES="libunwind;libcxxabi;libcxx" \
+            -DLIBCXX_ENABLE_SHARED=OFF -DLIBCXXABI_ENABLE_SHARED=OFF -DLIBUNWIND_ENABLE_SHARED=OFF \
+            -DLIBCXX_ENABLE_STATIC=ON -DLIBCXXABI_ENABLE_STATIC=ON -DLIBUNWIND_ENABLE_STATIC=ON \
+            -DLIBCXX_ABI_VERSION=1 -DLIBCXX_ABI_NAMESPACE=__1 \
+            -DLIBCXX_ABI_DEFINES="_LIBCPP_ABI_ALTERNATE_STRING_LAYOUT" \
+            -DLIBCXX_CXX_ABI=libcxxabi \
+            -DLIBCXXABI_USE_LLVM_UNWINDER=ON \
+            -DLIBCXXABI_ENABLE_STATIC_UNWINDER=ON \
+            -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
+            -DLIBCXX_HERMETIC_STATIC_LIBRARY=ON -DLIBCXXABI_HERMETIC_STATIC_LIBRARY=ON \
+            -DLIBUNWIND_HIDE_SYMBOLS=ON \
+            -DLIBUNWIND_ADDITIONAL_COMPILE_FLAGS="-D_LIBUNWIND_FTL_MACHO" \
+            -DLIBCXX_INCLUDE_BENCHMARKS=OFF -DLIBCXX_INCLUDE_TESTS=OFF -DLIBCXXABI_INCLUDE_TESTS=OFF \
+            -DLIBUNWIND_INCLUDE_TESTS=OFF -DLIBCXX_INCLUDE_DOCS=OFF -DLIBUNWIND_INCLUDE_DOCS=OFF \
+            -DLIBCXX_ENABLE_LOCALIZATION=ON -DLIBCXX_ENABLE_WIDE_CHARACTERS=ON \
+            -DLIBCXX_ENABLE_EXCEPTIONS=ON -DLIBCXXABI_ENABLE_EXCEPTIONS=ON \
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+            -DLIBCXX_USE_COMPILER_RT=OFF -DLIBCXXABI_USE_COMPILER_RT=OFF -DLIBUNWIND_USE_COMPILER_RT=OFF \
+            -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -D_LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION=3 -D_LIBCPP_DARWIN_CTYPE_ABI -fc++-abi=arm"
+          
+          ninja -C /tmp/libcxx-build cxx cxxabi unwind
+          ninja -C /tmp/libcxx-build install-cxx install-cxxabi install-unwind
+
+      - name: Configurar CMake para FTL Switch
+        run: |
+          cmake -G Ninja -B build -S . \
+            -DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/Switch.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLIBCXX_DIR=/tmp/libcxx-out
+
+      - name: Compilar ftl.nro
+        run: |
+          cmake --build build
+
+      - name: Verificar binario generado
+        run: |
+          ls -lh build/ftl.nro build/ftl.elf
+
+      - name: Subir artefacto Homebrew (.nro)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ftl-switch-build
+          path: |
+            build/ftl.nro
+            README.md
