@@ -85,12 +85,15 @@ jobs:
 
       - name: Verificar binario generado
         run: |
-          ls -lh build/ftl.nro build/ftl.elf
+          find build -maxdepth 2 -type f \( -name "*.nro" -o -name "*.elf" \) -exec ls -lh {} +
+          if [ -f build/ftl.elf.nro ] && [ ! -f build/ftl.nro ]; then
+            cp -v build/ftl.elf.nro build/ftl.nro
+          fi
 
       - name: Subir artefacto Homebrew (.nro)
         uses: actions/upload-artifact@v4
         with:
           name: ftl-switch-build
           path: |
-            build/ftl.nro
+            build/*.nro
             README.md

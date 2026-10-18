@@ -68,9 +68,9 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
         src/platform/plat_switch.c
     )
 
-    add_executable(ftl.elf ${SWITCH_SOURCES})
+    add_executable(ftl ${SWITCH_SOURCES})
 
-    target_include_directories(ftl.elf PRIVATE
+    target_include_directories(ftl PRIVATE
         include
         src
         $ENV{PORTLIBS_PREFIX}/include
@@ -78,7 +78,7 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
         $ENV{DEVKITPRO}/portlibs/switch/include
     )
 
-    target_compile_options(ftl.elf PRIVATE
+    target_compile_options(ftl PRIVATE
         ${COMMON_FLAGS}
         -O2
         -g
@@ -88,7 +88,7 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
         -fPIE
     )
 
-    target_link_options(ftl.elf PRIVATE
+    target_link_options(ftl PRIVATE
         -pie
         -Wl,--gc-sections
         -Wl,--export-dynamic-symbol=free
@@ -98,7 +98,7 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
         -Wl,--allow-multiple-definition
     )
 
-    target_link_libraries(ftl.elf PRIVATE
+    target_link_libraries(ftl PRIVATE
         ${CXX_LIBS}
         -lEGL
         -lGLESv2
@@ -126,7 +126,7 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
 
     if(COMMAND nx_create_nro)
         # Macro nativa de devkitPro CMake
-        nx_create_nro(ftl.elf
+        nx_create_nro(ftl
             NAME "${APP_TITLE}"
             AUTHOR "${APP_AUTHOR}"
             VERSION "${APP_VERSION}"
@@ -134,7 +134,7 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
         )
     else()
         # Fallback mediante comandos directos de devkitPro
-        add_custom_command(TARGET ftl.elf POST_BUILD
+        add_custom_command(TARGET ftl POST_BUILD
             COMMAND nacptool --create "${APP_TITLE}" "${APP_AUTHOR}" "${APP_VERSION}" ftl.nacp
             COMMAND elf2nro ftl.elf ftl.nro --nacp=ftl.nacp
                 $<$<BOOL:${APP_ICON}>:--icon=${APP_ICON}>
