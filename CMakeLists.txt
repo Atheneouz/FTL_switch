@@ -95,6 +95,7 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
         -Wl,--export-dynamic-symbol=realloc
         -Wl,--export-dynamic-symbol=malloc
         -Wl,--export-dynamic-symbol=calloc
+        -Wl,--allow-multiple-definition
     )
 
     target_link_libraries(ftl.elf PRIVATE
@@ -105,6 +106,7 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
         -ldrm_nouveau
         -lSDL2
         -lnx
+        -lstdc++
         -lm
         -lz
     )
