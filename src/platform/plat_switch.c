@@ -23,6 +23,11 @@
 #include "fw/fw.h"
 #include "fw/present.h"
 
+// Configuración de libnx: aumentamos la pila del hilo principal a 8 MB
+// (el valor por defecto de libnx es de solo 128 KB, lo que provocaba desbordamiento de pila
+// inmediato en LoadAnimations al reservar 68 KB en un único frame de llamada).
+size_t __nx_stack_size = 8 * 1024 * 1024;
+
 // Dimensiones de pantalla de Switch: 720p en modo portátil, 1080p en dock
 static int g_sw = 1280;
 static int g_sh = 720;

@@ -1190,33 +1190,73 @@ const unsigned short **__ctype_b_loc(void) {
 }
 
 extern locale_t _newlocale_r(struct _reent *, int, const char *, locale_t);
+extern void _freelocale_r(struct _reent *, locale_t);
+
+struct lconv *localeconv(void) {
+    static struct lconv s_lconv = {
+        .decimal_point = ".",
+        .thousands_sep = "",
+        .grouping = "",
+        .int_curr_symbol = "",
+        .currency_symbol = "",
+        .mon_decimal_point = "",
+        .mon_thousands_sep = "",
+        .mon_grouping = "",
+        .positive_sign = "",
+        .negative_sign = "",
+        .int_frac_digits = 127,
+        .frac_digits = 127,
+        .p_cs_precedes = 127,
+        .p_sep_by_space = 127,
+        .n_cs_precedes = 127,
+        .n_sep_by_space = 127,
+        .p_sign_posn = 127,
+        .n_sign_posn = 127,
+    };
+    return &s_lconv;
+}
 
 locale_t newlocale(int category_mask, const char *locale, locale_t base) {
-    (void)category_mask; (void)locale; (void)base;
     init_glibc_ctype();
-    // En Newlib, _newlocale_r(_REENT, 0, "C", NULL) devuelve directamente el objeto global _C_locale,
-    // que contiene todos los campos lconv completamente inicializados (decimal_point=".", etc.).
-    // Si se pasa una mascara parcial no nula, Newlib crea un objeto incompleto que carece de lconv.
-    locale_t loc = _newlocale_r(_REENT, 0, "C", NULL);
+    // Newlib solo admite bits de categoria 0x7e (LC_COLLATE a LC_MESSAGES).
+    // Si la mascara es 0 o no tiene bits validos, forzamos 0x7e para que Newlib reserve
+    // memoria dinamica en heap con calloc y copie _C_locale (incluyendo lconv con decimal_point=".").
+    int newlib_mask = category_mask & 0x7e;
+    if (newlib_mask == 0) newlib_mask = 0x7e;
+
+    locale_t loc = _newlocale_r(_REENT, newlib_mask, (locale && *locale) ? locale : "C", base);
+    if (!loc) {
+        loc = _newlocale_r(_REENT, 0x7e, "C", NULL);
+    }
     if (loc) {
-        // libc++ espera el puntero a __ctype_b en el offset 0x68 de locale_t
+        // LLVM libc++ (compilada para aarch64) espera el puntero a __ctype_b en el offset 0x68 de locale_t
         *(const unsigned short **)((char *)loc + 0x68) = s_glibc_ctype_b_ptr;
+        // Nos aseguramos de que el campo decimal_point en lconv (offset 0x1e8 en Newlib aarch64) nunca sea NULL
+        struct lconv *lc = (struct lconv *)((char *)loc + 0x1e8);
+        if (!lc->decimal_point || !*lc->decimal_point) {
+            static const char dot[] = ".";
+            lc->decimal_point = (char *)dot;
+        }
     }
     return loc;
 }
 
 void freelocale(locale_t loc) {
-    (void)loc;
+    if (loc && loc != (locale_t)-1) {
+        _freelocale_r(_REENT, loc);
+    }
 }
 
 locale_t uselocale(locale_t loc) {
     init_glibc_ctype();
     static locale_t s_cur_loc = NULL;
     if (!s_cur_loc) {
-        s_cur_loc = newlocale(0, "C", NULL);
+        s_cur_loc = newlocale(0x7e, "C", NULL);
     }
     locale_t prev = s_cur_loc;
-    if (loc != (locale_t)0 && loc != (locale_t)-1) {
+    if (loc == (locale_t)-1) {
+        s_cur_loc = newlocale(0x7e, "C", NULL);
+    } else if (loc != (locale_t)0) {
         s_cur_loc = loc;
         if (s_cur_loc) {
             *(const unsigned short **)((char *)s_cur_loc + 0x68) = s_glibc_ctype_b_ptr;
@@ -1226,8 +1266,16 @@ locale_t uselocale(locale_t loc) {
 }
 
 locale_t duplocale(locale_t loc) {
-    if (!loc) loc = uselocale(0);
-    return loc;
+    if (!loc || loc == (locale_t)-1) loc = uselocale(0);
+    init_glibc_ctype();
+    locale_t dup = _newlocale_r(_REENT, 0x7e, "C", NULL);
+    if (dup && loc) {
+        memcpy(dup, loc, 0x290);
+    }
+    if (dup) {
+        *(const unsigned short **)((char *)dup + 0x68) = s_glibc_ctype_b_ptr;
+    }
+    return dup ? dup : loc;
 }
 #endif
 
