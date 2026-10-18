@@ -38,9 +38,10 @@ typedef struct mo_image {
     uint32_t fstarts_off, fstarts_size;
     uint8_t *near_tramp;  // RX after mo_protect; trampolines within +-128MB of the code
     size_t near_tramp_size, near_tramp_used;
-    void *src_heap;
+    uint8_t *src_heap;
     void *code_mem;
     void *map_reservation;
+    size_t reserve_size;
 } mo_image;
 
 // Resolve an imported symbol. `dylib` is the install name it is imported from (may be NULL).
@@ -52,7 +53,25 @@ int mo_bind(mo_image *img, mo_resolver resolve);
 void mo_protect(mo_image *img);
 void mo_run_initializers(mo_image *img, int argc, const char **argv, const char **envp, const char **apple);
 mo_section *mo_find_section(mo_image *img, const char *seg, const char *sect);
-static inline void *mo_ptr(mo_image *img, uint64_t linkaddr) { return (void *)(uintptr_t)(linkaddr + img->slide); }
+
+static inline void *mo_runtime_ptr(mo_image *img, uint64_t linkaddr) {
+    return (void *)(uintptr_t)(linkaddr + img->slide);
+}
+
+static inline void *mo_stage_ptr(mo_image *img, const void *runtime_ptr) {
+#ifdef __SWITCH__
+    if (img->src_heap && (const uint8_t *)runtime_ptr >= img->base &&
+        (const uint8_t *)runtime_ptr < img->base + img->reserve_size) {
+        return (void *)(img->src_heap + ((const uint8_t *)runtime_ptr - img->base));
+    }
+#endif
+    return (void *)runtime_ptr;
+}
+
+static inline void *mo_ptr(mo_image *img, uint64_t linkaddr) {
+    void *rt = mo_runtime_ptr(img, linkaddr);
+    return mo_stage_ptr(img, rt);
+}
 
 // Unresolved-import diagnostics
 void mo_set_trap_handler(void (*fn)(const char *name));

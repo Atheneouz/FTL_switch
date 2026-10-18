@@ -35,7 +35,7 @@ static void write_abs_jump(uint32_t *p, void *target) {
 }
 
 void *patch_hook(mo_image *img, uint64_t addr, void *hook, int want_original) {
-    uint32_t *code = mo_ptr(img, addr);
+    uint32_t *code = (uint32_t *)mo_ptr(img, addr);
     void *orig = NULL;
     if (want_original) {
         for (int i = 0; i < 4; i++)
@@ -47,12 +47,13 @@ void *patch_hook(mo_image *img, uint64_t addr, void *hook, int want_original) {
             LOGE("patch_hook: no hay espacio en near_tramp");
             return NULL;
         }
-        uint32_t *t = (uint32_t *)(img->near_tramp + img->near_tramp_used);
+        void *orig_runtime = img->near_tramp + img->near_tramp_used;
+        uint32_t *t = (uint32_t *)mo_stage_ptr(img, orig_runtime);
         img->near_tramp_used += 32;
         memcpy(t, code, 16);
-        write_abs_jump(t + 4, code + 4);
+        write_abs_jump(t + 4, (uint32_t *)mo_runtime_ptr(img, addr) + 4);
         __builtin___clear_cache((char *)t, (char *)(t + 8));
-        orig = t;
+        orig = orig_runtime;
     }
     write_abs_jump(code, hook);
     __builtin___clear_cache((char *)code, (char *)(code + 4));
@@ -63,11 +64,12 @@ void *patch_hook(mo_image *img, uint64_t addr, void *hook, int want_original) {
 // trampoline (works for tiny functions, e.g. a lone `ret`). Must run before mo_protect.
 int patch_branch(mo_image *img, uint64_t addr, void *target) {
     if (!img->near_tramp || img->near_tramp_used + 16 > img->near_tramp_size) return -1;
-    uint32_t *t = (uint32_t *)(img->near_tramp + img->near_tramp_used);
+    void *t_runtime = img->near_tramp + img->near_tramp_used;
+    uint32_t *t = (uint32_t *)mo_stage_ptr(img, t_runtime);
     img->near_tramp_used += 16;
     write_abs_jump(t, target);
-    uint32_t *code = mo_ptr(img, addr);
-    intptr_t delta = (intptr_t)((uint8_t *)t - (uint8_t *)code);
+    uint32_t *code = (uint32_t *)mo_ptr(img, addr);
+    intptr_t delta = (intptr_t)((uint8_t *)t_runtime - (uint8_t *)mo_runtime_ptr(img, addr));
     if (delta >= (1 << 27) || delta < -(1 << 27)) return -1;
     *code = 0x14000000u | ((uint32_t)(delta >> 2) & 0x03ffffffu);
     __builtin___clear_cache((char *)code, (char *)(code + 1));

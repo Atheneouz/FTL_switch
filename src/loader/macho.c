@@ -226,42 +226,22 @@ int mo_load(const char *path, mo_image *img) {
     }
     memset(raw, 0, reserve);
 
-    Handle proc = envGetOwnProcessHandle();
-    if (proc == INVALID_HANDLE) {
-        LOGE("macho: envGetOwnProcessHandle devolvió INVALID_HANDLE");
-        free(raw);
-        return -1;
-    }
-
-    Result rc = svcMapProcessCodeMemory(proc, (u64)map_addr, (u64)raw, reserve);
-    if (R_FAILED(rc)) {
-        LOGE("macho: svcMapProcessCodeMemory falló con código 0x%08x (proc=0x%x, size=%zu)", rc, proc, reserve);
-        LOGE("¿Estás ejecutando FTL en Modo Applet (Álbum)? Para ejecutar FTL se requiere Modo Completo (mantener R al abrir un juego).");
-        free(raw);
-        return -1;
-    }
-
-    rc = svcSetProcessMemoryPermission(proc, (u64)map_addr, reserve, Perm_Rw);
-    if (R_FAILED(rc)) {
-        LOGE("macho: svcSetProcessMemoryPermission (Perm_Rw) falló con código 0x%08x", rc);
-        svcUnmapProcessCodeMemory(proc, (u64)map_addr, (u64)raw, reserve);
-        free(raw);
-        return -1;
-    }
-
     uint8_t *base = (uint8_t *)map_addr;
     img->src_heap = raw;
     img->code_mem = map_addr;
     img->map_reservation = rv;
+    img->reserve_size = reserve;
 #else
     uint8_t *raw = mmap(NULL, reserve, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (raw == MAP_FAILED) { LOGE("macho: mmap %zu failed", reserve); return -1; }
     uint8_t *base = (uint8_t *)(((uintptr_t)raw + align - 1) & ~(uintptr_t)(align - 1));
     if (base > raw) munmap(raw, (size_t)(base - raw));
     munmap(base + span + tramp_size, (size_t)(raw + reserve - (base + span + tramp_size)));
+    img->src_heap = NULL;
+    img->reserve_size = reserve;
 #endif
     img->near_tramp = base + span;
-    img->near_tramp_size = tramp_size;
+    img->near_tramp_size = reserve - span;
     img->near_tramp_used = 0;
 
     img->base = base;
@@ -273,7 +253,8 @@ int mo_load(const char *path, mo_image *img) {
         mo_segment *s = &img->segs[i];
         if (!strcmp(s->name, "__PAGEZERO")) continue;
         if (s->fileoff + s->filesize > img->file_size) { LOGE("macho: segment %s out of file", s->name); return -1; }
-        memcpy(base + (s->vmaddr - lo), f + s->fileoff, (size_t)s->filesize);
+        uint8_t *dst = (uint8_t *)mo_stage_ptr(img, base + (s->vmaddr - lo));
+        memcpy(dst, f + s->fileoff, (size_t)s->filesize);
     }
     for (int i = 0; i < img->nsects; i++) img->sects[i].addr += (uint64_t)img->slide;
     if (have_main) {
@@ -289,7 +270,7 @@ int mo_load(const char *path, mo_image *img) {
     int count = 0;
 #define REBASE_AT()                                                         \
     do {                                                                    \
-        uint64_t *loc = (uint64_t *)(base + (seg_addr + off - lo));         \
+        uint64_t *loc = (uint64_t *)mo_stage_ptr(img, base + (seg_addr + off - lo)); \
         *loc += (uint64_t)img->slide;                                       \
         count++;                                                            \
     } while (0)
@@ -342,7 +323,8 @@ static void *make_trap_stub(mo_image *img, const char *name) {
         port_fatal("macho: no hay espacio en near_tramp para stub '%s'", name);
         return NULL;
     }
-    uint32_t *s = (uint32_t *)(img->near_tramp + img->near_tramp_used);
+    void *runtime_stub = img->near_tramp + img->near_tramp_used;
+    uint32_t *s = (uint32_t *)mo_stage_ptr(img, runtime_stub);
     img->near_tramp_used += 32;
     s[0] = 0x58000090;  // ldr x16, #16
     s[1] = 0x580000B1;  // ldr x17, #20
@@ -353,7 +335,7 @@ static void *make_trap_stub(mo_image *img, const char *name) {
     void *h = (void *)mo_trap_entry;
     memcpy(&s[6], &h, 8);
     __builtin___clear_cache((char *)s, (char *)(s + 8));
-    return s;
+    return runtime_stub;
 }
 
 static uint64_t g_zero_data[512];
@@ -383,7 +365,7 @@ static int do_binds(mo_image *img, const uint8_t *p, const uint8_t *end, int laz
             }                                                                             \
             resolved = 1;                                                                 \
         }                                                                                 \
-        uint64_t *loc = (uint64_t *)(img->base + (seg_addr + off - img->vmaddr_min));     \
+        uint64_t *loc = (uint64_t *)mo_stage_ptr(img, img->base + (seg_addr + off - img->vmaddr_min)); \
         *loc = (uint64_t)(uintptr_t)target + (uint64_t)addend;                           \
         (*nbound)++;                                                                      \
     } while (0)
@@ -437,7 +419,22 @@ int mo_bind(mo_image *img, mo_resolver resolve) {
 void mo_protect(mo_image *img) {
 #ifdef __SWITCH__
     Handle proc = envGetOwnProcessHandle();
-    armDCacheFlush(img->base, img->map_size + img->near_tramp_size);
+    size_t total_reserve = img->reserve_size;
+
+    // 1. Limpiamos la caché de datos de todo el búfer de preparación en heap
+    armDCacheFlush(img->src_heap, total_reserve);
+
+    // 2. Mapeamos el búfer de preparación en la memoria de código ejecutable
+    virtmemLock();
+    Result rc = svcMapProcessCodeMemory(proc, (u64)img->base, (u64)img->src_heap, total_reserve);
+    virtmemUnlock();
+    if (R_FAILED(rc)) {
+        port_fatal("macho: svcMapProcessCodeMemory falló con código 0x%08x (proc=0x%x, size=%zu)", rc, proc, total_reserve);
+        return;
+    }
+    LOGI("macho: svcMapProcessCodeMemory exitoso en 0x%lx (%zu bytes)", (unsigned long)img->base, total_reserve);
+
+    // 3. Asignamos permisos únicos y definitivos a cada segmento
     for (int i = 0; i < img->nsegs; i++) {
         mo_segment *s = &img->segs[i];
         if (!strcmp(s->name, "__PAGEZERO")) continue;
@@ -447,24 +444,25 @@ void mo_protect(mo_image *img) {
         if (s->initprot & 4) perm = Perm_Rx;
         else if (s->initprot & 2) perm = Perm_Rw;
         else if (s->initprot & 1) perm = Perm_R;
-        Result rc = svcSetProcessMemoryPermission(proc, a, sz, perm);
+        rc = svcSetProcessMemoryPermission(proc, a, sz, perm);
         if (R_FAILED(rc)) {
-            LOGW("macho: svcSetProcessMemoryPermission for %s (0x%lx, perm=%u) falló: 0x%08x", s->name, (unsigned long)a, perm, rc);
+            LOGW("macho: svcSetProcessMemoryPermission para %s (0x%lx, perm=%u) falló: 0x%08x", s->name, (unsigned long)a, perm, rc);
         } else {
             LOGI("macho: segmento %s (0x%lx, %zu bytes) protegido como %s", s->name, (unsigned long)a, (size_t)sz, (perm == Perm_Rx) ? "RX" : ((perm == Perm_Rw) ? "RW" : "R"));
         }
     }
     if (img->near_tramp) {
         uint64_t tramp_a = (uint64_t)img->near_tramp;
-        uint64_t tramp_sz = (img->near_tramp_size + 0xFFF) & ~0xFFFULL;
-        Result rc = svcSetProcessMemoryPermission(proc, tramp_a, tramp_sz, Perm_Rx);
+        uint64_t tramp_sz = img->near_tramp_size;
+        rc = svcSetProcessMemoryPermission(proc, tramp_a, tramp_sz, Perm_Rx);
         if (R_FAILED(rc)) {
-            LOGW("macho: svcSetProcessMemoryPermission for near_tramp falló: 0x%08x", rc);
+            LOGW("macho: svcSetProcessMemoryPermission para near_tramp falló: 0x%08x", rc);
         } else {
             LOGI("macho: near_tramp (0x%lx, %zu bytes) protegido como RX", (unsigned long)tramp_a, (size_t)tramp_sz);
         }
     }
-    armICacheInvalidate(img->base, img->map_size + img->near_tramp_size);
+    armICacheInvalidate(img->base, total_reserve);
+    img->src_heap = NULL;
 #else
     for (int i = 0; i < img->nsegs; i++) {
         mo_segment *s = &img->segs[i];
