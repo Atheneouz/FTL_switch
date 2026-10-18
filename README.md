@@ -79,23 +79,15 @@ sdmc:/
 
 ---
 
-### Installation Modes: Forwarder vs Standalone
+### Installation: Homebrew Forwarder (NSP Package)
 
 Inside the `instalacion/` folder you will find:
 
-1. **Forwarder NSP (Included by default, ~0.4 MB)**:
-   - Installs an official shortcut on your Switch HOME Menu.
-   - Launches the game from `sdmc:/switch/ftl/ftl.nro`.
-   - Allows updating the `ftl.nro` binary anytime without reinstalling.
-   - Contains zero copyrighted game assets and is legally distributed directly in this repo.
-
-2. **Standalone Native NSP (Optional, ~246 MB)**:
-   - Bundles the native NSO executable in ExeFS and all game assets in RomFS into a single `.nsp` file requiring no MicroSD files (except saves).
-   - To build it yourself with your own keys:
-     ```bash
-     python tools/prepare_romfs.py
-     python tools/build_nsp.py
-     ```
+- **FTL Forwarder NSP (`FTL_Forwarder_[0100F71016210000].nsp`, ~0.4 MB)**:
+  - Installs an official shortcut directly on your Switch HOME Menu.
+  - Seamlessly launches the homebrew game from `sdmc:/switch/ftl/ftl.nro`.
+  - Allows updating the `ftl.nro` binary anytime on your MicroSD without reinstalling the NSP package.
+  - Contains zero copyrighted game assets and is legally distributed directly in this repository.
 
 ---
 
@@ -206,23 +198,15 @@ sdmc:/
 
 ---
 
-### Modos de Instalación: Forwarder vs Standalone
+### Modo de Instalación: Homebrew Forwarder (Paquete NSP)
 
-En la carpeta `instalacion/` dispones de información detallada:
+En la carpeta `instalacion/` dispones de:
 
-1. **Forwarder NSP (Incluido por defecto, ~0.4 MB)**:
-   - Instala un acceso directo oficial en el Menú HOME de la consola.
-   - Ejecuta el juego desde `sdmc:/switch/ftl/ftl.nro`.
-   - Permite actualizar el ejecutable `ftl.nro` en cualquier momento sin tener que reinstalar el juego.
-   - No contiene archivos propietarios, por lo que se distribuye directamente en el repositorio.
-
-2. **Standalone NSP Nativo (Opcional, ~246 MB)**:
-   - Empaqueta el ejecutable NSO nativo en ExeFS y todos los datos del juego en RomFS dentro de un único NSP que no requiere archivos en la MicroSD (excepto la carpeta de partidas guardadas).
-   - Para generarlo con tus propias claves:
-     ```bash
-     python tools/prepare_romfs.py
-     python tools/build_nsp.py
-     ```
+- **FTL Forwarder NSP (`FTL_Forwarder_[0100F71016210000].nsp`, ~0.4 MB)**:
+  - Instala un acceso directo oficial en el Menú HOME de la consola.
+  - Ejecuta directamente el juego ubicado en `sdmc:/switch/ftl/ftl.nro`.
+  - Permite actualizar el ejecutable `ftl.nro` en cualquier momento en la MicroSD sin necesidad de reinstalar el NSP.
+  - No contiene archivos propietarios, por lo que se distribuye directamente en el repositorio.
 
 ---
 

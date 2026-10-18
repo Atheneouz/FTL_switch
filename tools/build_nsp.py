@@ -99,96 +99,8 @@ def generar_nacp(destino_nacp, tmp_dir):
     cmd = [hptnacp_bin, "-a", "createnacp", "-i", xml_path, "-o", destino_nacp]
     subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-def construir_standalone_nsp(main_bin_path, romfs_dir, out_dir):
+def construir_forwarder_nsp(out_dir="instalacion"):
     print("=" * 60)
-    print("Construyendo Standalone NSP Nativo (NSO en ExeFS + RomFS)")
-    print("=" * 60)
-
-    if not ENV_NTON.get("hacbrewpack") or not os.path.exists(ENV_NTON["hacbrewpack"]):
-        print("[ERROR] No se localizó 'hacbrewpack'. Asegúrate de tener instalado 'nton' (pip install nton).")
-        return False
-
-    staging = os.path.abspath("temp_standalone_build")
-    if os.path.exists(staging):
-        shutil.rmtree(staging)
-    os.makedirs(staging, exist_ok=True)
-
-    try:
-
-        # 1. Preparamos exefs nativo con el binario NSO y los permisos NPDM
-        exefs_template = ENV_NTON.get("exefs")
-        if not exefs_template or not os.path.exists(exefs_template):
-            print("[ERROR] No se localizó la plantilla exefs de nton.")
-            return False
-
-        exefs_dir = os.path.join(staging, "exefs")
-        os.makedirs(exefs_dir, exist_ok=True)
-        shutil.copy2(os.path.join(exefs_template, "main.npdm"), os.path.join(exefs_dir, "main.npdm"))
-        shutil.copy2(main_bin_path, os.path.join(exefs_dir, "main"))
-        print(f"[OK] Incrustado binario NSO nativo -> exefs/main ({os.path.getsize(main_bin_path)/(1024*1024):.2f} MB)")
-
-        logo_template = ENV_NTON.get("logo")
-        logo_dir = os.path.join(staging, "logo")
-        shutil.copytree(logo_template, logo_dir)
-
-        # 2. Preparamos control
-        control_dir = os.path.join(staging, "control")
-        os.makedirs(control_dir, exist_ok=True)
-        generar_nacp(os.path.join(control_dir, "control.nacp"), staging)
-        preparar_icono("assets/icon.jpg", os.path.join(control_dir, "icon_AmericanEnglish.dat"))
-        preparar_icono("assets/icon.jpg", os.path.join(control_dir, "icon_Spanish.dat"))
-
-        # 3. Preparamos romfs con los recursos del juego (FTL y FTL.app)
-        target_romfs = os.path.join(staging, "romfs")
-        print(f"Copiando recursos RomFS desde {romfs_dir}...")
-        shutil.copytree(romfs_dir, target_romfs)
-
-        # 4. Empaquetamos mediante hacbrewpack
-        os.makedirs(out_dir, exist_ok=True)
-        nsp_temp_out = os.path.join(staging, "nsp_out")
-        os.makedirs(nsp_temp_out, exist_ok=True)
-
-        print("Empaquetando con hacbrewpack...")
-        hacbrewpack_bin = ENV_NTON.get("hacbrewpack")
-        keys_path = ENV_NTON.get("keys")
-        if not keys_path or not os.path.exists(keys_path):
-            print(f"[ERROR] No se encontraron las claves prod.keys en {keys_path}.")
-            return False
-
-        cmd = [
-            hacbrewpack_bin,
-            "--titleid", TITLE_ID,
-            "--titlename", TITLE_NAME,
-            "--titlepublisher", TITLE_PUBLISHER,
-            "--nspdir", nsp_temp_out,
-            "-k", keys_path
-        ]
-        res = subprocess.run(cmd, cwd=staging, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        if res.returncode != 0:
-            print("[ERROR] Fallo al generar con hacbrewpack:")
-            print(res.stdout)
-            return False
-
-        # Renombramos y movemos el NSP resultante a out_dir
-        built_nsp = os.path.join(nsp_temp_out, f"{TITLE_ID}.nsp")
-        if not os.path.exists(built_nsp):
-            for item in os.listdir(nsp_temp_out):
-                if item.endswith(".nsp"):
-                    built_nsp = os.path.join(nsp_temp_out, item)
-                    break
-
-        final_nsp = os.path.join(out_dir, f"FTL_Standalone_RomFS_[{TITLE_ID}].nsp")
-        shutil.copy2(built_nsp, final_nsp)
-        print(f"\n[EXITO] Standalone NSP nativo generado correctamente:")
-        print(f"  -> {os.path.abspath(final_nsp)} ({os.path.getsize(final_nsp)/(1024*1024):.2f} MB)")
-        return True
-
-    finally:
-        if os.path.exists(staging):
-            shutil.rmtree(staging)
-
-def construir_forwarder_nsp(out_dir):
-    print("\n" + "=" * 60)
     print("Construyendo Forwarder NSP (Acceso directo a MicroSD)")
     print("=" * 60)
 
@@ -264,33 +176,6 @@ def construir_forwarder_nsp(out_dir):
         if os.path.exists(staging):
             shutil.rmtree(staging)
 
-def localizar_nso(ruta_sugerida=None):
-    if ruta_sugerida and os.path.exists(ruta_sugerida):
-        return ruta_sugerida
-    candidatos = [
-        "bin/main",
-        "build/main",
-        "main"
-    ]
-    for c in candidatos:
-        if os.path.exists(c):
-            return c
-    return None
-
 if __name__ == "__main__":
-    nso_arg = sys.argv[1] if len(sys.argv) > 1 else None
-    romfs_arg = sys.argv[2] if len(sys.argv) > 2 else "romfs"
-    salida_arg = sys.argv[3] if len(sys.argv) > 3 else "instalacion"
-
-    nso_resuelto = localizar_nso(nso_arg)
-
-    if nso_resuelto and os.path.exists(romfs_arg):
-        construir_standalone_nsp(nso_resuelto, romfs_arg, salida_arg)
-    else:
-        if not nso_resuelto:
-            print("[INFO] No se localizó el binario NSO 'main' para Standalone. Omitiendo Standalone NSP.")
-        if not os.path.exists(romfs_arg):
-            print(f"[INFO] Carpeta RomFS '{romfs_arg}' no encontrada. Omitiendo Standalone NSP.")
-
-    construir_forwarder_nsp(salida_arg)
-
+    salida = sys.argv[1] if len(sys.argv) > 1 else "instalacion"
+    construir_forwarder_nsp(salida)
