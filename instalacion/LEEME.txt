@@ -1,0 +1,47 @@
+======================================================================
+  FTL: Faster Than Light - Nintendo Switch Port (Paquetes NSP)
+======================================================================
+
+En esta carpeta dispones del Forwarder oficial listo para instalar en tu
+Nintendo Switch con Custom Firmware (Atmosphère):
+
+1. FTL_Forwarder_[0100F71016210000].nsp (INCLUIDO Y LISTO)
+   ----------------------------------------------------------
+   - Tipo: Acceso directo nativo del Menú HOME a la tarjeta MicroSD.
+   - Tamaño: ~0.4 MB (libre de datos comerciales, legal para distribuir).
+   - Ejecuta directamente el juego ubicado en:
+       sdmc:/switch/ftl/ftl.nro
+   - Carga el binario iOS 'FTL' y recursos de 'FTL.app' desde la MicroSD.
+   - Las partidas guardadas se conservan en 'sdmc:/switch/ftl/save/'.
+   - Permite actualizar el ejecutable ftl.nro sin reinstalar el juego.
+
+2. FTL_Standalone_RomFS_[0100F71016210000].nsp (OPCIONAL)
+   ----------------------------------------------------------
+   - Tipo: Paquete Standalone NATIVO (NSO en ExeFS + RomFS completo).
+   - Tamaño: ~246 MB.
+   - Por motivos legales de derechos de autor de Subset Games, no se
+     distribuye precompilado con los datos del juego.
+   - Puedes generarlo tú mismo en un paso ejecutando:
+       python tools/build_nsp.py
+     (tras haber colocado tu archivo .ipa en la carpeta 'ipa/').
+
+======================================================================
+  PASOS DE INSTALACION EN TU NINTENDO SWITCH
+======================================================================
+
+1. Preparamos los datos del juego en la MicroSD:
+   - Coloca tu archivo 'FTL_xxx.ipa' en la carpeta 'ipa/'.
+   - Ejecuta:
+       python tools/prepare_sd_card.py
+   - Copia la carpeta 'switch' de 'sd_card/' a la raíz de tu MicroSD.
+
+2. Instalamos el Forwarder en la consola:
+   - Conecta la Switch al PC con cable USB-C.
+   - Abre DBI en la Switch y pulsa "Run MTP Responder".
+   - En tu PC entra en la unidad Switch -> "5: MicroSD install" (o "4: NAND install").
+   - Copia el archivo 'FTL_Forwarder_[0100F71016210000].nsp'.
+
+3. Pulsa el botón HOME en tu Switch y verás el icono de
+   "FTL: Faster Than Light" listo para jugar.
+======================================================================
+

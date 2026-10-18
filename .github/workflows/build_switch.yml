@@ -95,7 +95,18 @@ jobs:
             cp -v build/ftl.elf.nro build/ftl.nro
           fi
 
-      - name: Subir artefacto Homebrew (.nro y main NSO)
+      - name: Preparar carpeta de MicroSD si se incluye IPA
+        run: |
+          mkdir -p bin
+          if [ -f build/ftl.nro ]; then
+            cp -v build/ftl.nro bin/ftl.nro
+          fi
+          if ls ipa/*.ipa 1> /dev/null 2>&1; then
+            echo "IPA detectado en ipa/, preparando estructura de MicroSD..."
+            python3 tools/prepare_sd_card.py
+          fi
+
+      - name: Subir artefacto Homebrew (.nro, main NSO y Forwarder NSP)
         uses: actions/upload-artifact@v4
         with:
           name: ftl-switch-build
@@ -103,3 +114,13 @@ jobs:
             build/*.nro
             build/main
             README.md
+            instalacion/FTL_Forwarder_*.nsp
+            instalacion/LEEME.txt
+
+      - name: Subir paquete listo para MicroSD (si se generó con IPA)
+        if: hashFiles('sd_card/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ftl-switch-sdcard-ready
+          path: sd_card/
+

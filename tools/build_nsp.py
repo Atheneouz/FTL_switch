@@ -4,13 +4,61 @@ import shutil
 import subprocess
 from PIL import Image
 
-# Rutas de herramientas y claves
-SITE_PACKAGES = os.path.expandvars(r"%APPDATA%\Python\Python311\site-packages")
-HACBREWPACK = os.path.join(SITE_PACKAGES, "nton", "bin", "hacbrewpack.exe")
-HPTNACP = os.path.join(SITE_PACKAGES, "nton", "bin", "hptnacp.exe")
-EXEFS_TEMPLATE = os.path.join(SITE_PACKAGES, "nton", "assets", "exefs")
-LOGO_TEMPLATE = os.path.join(SITE_PACKAGES, "nton", "assets", "logo")
-PROD_KEYS = os.path.expanduser(r"~/.switch/prod.keys")
+def resolver_entorno_nton():
+    # Detectamos la ubicación del paquete nton según el entorno de Python activo
+    base_nton = None
+    try:
+        import nton
+        base_nton = os.path.dirname(nton.__file__)
+    except ImportError:
+        pass
+
+    if not base_nton:
+        rutas_candidatas = [
+            os.path.expandvars(r"%APPDATA%\Python\Python311\site-packages\nton"),
+            os.path.expandvars(r"%APPDATA%\Python\Python312\site-packages\nton"),
+            os.path.expandvars(r"%APPDATA%\Python\Python310\site-packages\nton"),
+            os.path.expanduser("~/.local/lib/python3.11/site-packages/nton"),
+            os.path.expanduser("~/.local/lib/python3.12/site-packages/nton"),
+        ]
+        for r in rutas_candidatas:
+            if os.path.isdir(r):
+                base_nton = r
+                break
+
+    hacbrewpack = shutil.which("hacbrewpack")
+    if not hacbrewpack and base_nton:
+        exe_path = os.path.join(base_nton, "bin", "hacbrewpack.exe" if os.name == "nt" else "hacbrewpack")
+        if os.path.exists(exe_path):
+            hacbrewpack = exe_path
+
+    hptnacp = shutil.which("hptnacp")
+    if not hptnacp and base_nton:
+        nacp_exe = os.path.join(base_nton, "bin", "hptnacp.exe" if os.name == "nt" else "hptnacp")
+        if os.path.exists(nacp_exe):
+            hptnacp = nacp_exe
+
+    exefs = os.path.join(base_nton, "assets", "exefs") if base_nton else None
+    logo = os.path.join(base_nton, "assets", "logo") if base_nton else None
+    control_xml = os.path.join(base_nton, "assets", "control.nacp.xml") if base_nton else None
+
+    prod_keys = os.path.expanduser("~/.switch/prod.keys")
+    if not os.path.exists(prod_keys) and os.name == "nt":
+        alt_keys = os.path.expandvars(r"%USERPROFILE%\.switch\prod.keys")
+        if os.path.exists(alt_keys):
+            prod_keys = alt_keys
+
+    return {
+        "base": base_nton,
+        "hacbrewpack": hacbrewpack,
+        "hptnacp": hptnacp,
+        "exefs": exefs,
+        "logo": logo,
+        "control_xml": control_xml,
+        "keys": prod_keys
+    }
+
+ENV_NTON = resolver_entorno_nton()
 
 TITLE_ID = "0100F71016210000"
 TITLE_NAME = "FTL: Faster Than Light"
@@ -31,8 +79,11 @@ def preparar_icono(origen_jpg, destino_dat):
     clean.close()
 
 def generar_nacp(destino_nacp, tmp_dir):
-    template_path = os.path.join(SITE_PACKAGES, "nton", "assets", "control.nacp.xml")
-    with open(template_path, "r", encoding="utf-8") as f:
+    xml_template = ENV_NTON.get("control_xml")
+    if not xml_template or not os.path.exists(xml_template):
+        raise FileNotFoundError("No se encontró control.nacp.xml en los recursos de nton.")
+
+    with open(xml_template, "r", encoding="utf-8") as f:
         template = f.read()
 
     xml_content = (
@@ -44,13 +95,18 @@ def generar_nacp(destino_nacp, tmp_dir):
     with open(xml_path, "w", encoding="utf-8") as f:
         f.write(xml_content)
 
-    cmd = [HPTNACP, "-a", "createnacp", "-i", xml_path, "-o", destino_nacp]
+    hptnacp_bin = ENV_NTON.get("hptnacp")
+    cmd = [hptnacp_bin, "-a", "createnacp", "-i", xml_path, "-o", destino_nacp]
     subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-def construir_standalone_nsp(nro_path, romfs_dir, out_dir):
+def construir_standalone_nsp(main_bin_path, romfs_dir, out_dir):
     print("=" * 60)
-    print("Construyendo Standalone NSP (Embebido en RomFS)")
+    print("Construyendo Standalone NSP Nativo (NSO en ExeFS + RomFS)")
     print("=" * 60)
+
+    if not ENV_NTON.get("hacbrewpack") or not os.path.exists(ENV_NTON["hacbrewpack"]):
+        print("[ERROR] No se localizó 'hacbrewpack'. Asegúrate de tener instalado 'nton' (pip install nton).")
+        return False
 
     staging = os.path.abspath("temp_standalone_build")
     if os.path.exists(staging):
@@ -58,11 +114,22 @@ def construir_standalone_nsp(nro_path, romfs_dir, out_dir):
     os.makedirs(staging, exist_ok=True)
 
     try:
-        # 1. Preparamos exefs y logo desde las plantillas
+
+        # 1. Preparamos exefs nativo con el binario NSO y los permisos NPDM
+        exefs_template = ENV_NTON.get("exefs")
+        if not exefs_template or not os.path.exists(exefs_template):
+            print("[ERROR] No se localizó la plantilla exefs de nton.")
+            return False
+
         exefs_dir = os.path.join(staging, "exefs")
-        shutil.copytree(EXEFS_TEMPLATE, exefs_dir)
+        os.makedirs(exefs_dir, exist_ok=True)
+        shutil.copy2(os.path.join(exefs_template, "main.npdm"), os.path.join(exefs_dir, "main.npdm"))
+        shutil.copy2(main_bin_path, os.path.join(exefs_dir, "main"))
+        print(f"[OK] Incrustado binario NSO nativo -> exefs/main ({os.path.getsize(main_bin_path)/(1024*1024):.2f} MB)")
+
+        logo_template = ENV_NTON.get("logo")
         logo_dir = os.path.join(staging, "logo")
-        shutil.copytree(LOGO_TEMPLATE, logo_dir)
+        shutil.copytree(logo_template, logo_dir)
 
         # 2. Preparamos control
         control_dir = os.path.join(staging, "control")
@@ -71,21 +138,10 @@ def construir_standalone_nsp(nro_path, romfs_dir, out_dir):
         preparar_icono("assets/icon.jpg", os.path.join(control_dir, "icon_AmericanEnglish.dat"))
         preparar_icono("assets/icon.jpg", os.path.join(control_dir, "icon_Spanish.dat"))
 
-        # 3. Preparamos romfs
+        # 3. Preparamos romfs con los recursos del juego (FTL y FTL.app)
         target_romfs = os.path.join(staging, "romfs")
         print(f"Copiando recursos RomFS desde {romfs_dir}...")
         shutil.copytree(romfs_dir, target_romfs)
-
-        # Copiamos el ejecutable ftl.nro dentro de romfs como app.nro
-        dest_app_nro = os.path.join(target_romfs, "app.nro")
-        shutil.copy2(nro_path, dest_app_nro)
-        print(f"[OK] Incrustado {nro_path} como romfs:/app.nro")
-
-        # Escribimos los archivos de redireccion para el cargador de ExeFS
-        with open(os.path.join(target_romfs, "nextNroPath"), "w", encoding="utf-8") as f:
-            f.write("romfs:/app.nro")
-        with open(os.path.join(target_romfs, "nextArgv"), "w", encoding="utf-8") as f:
-            f.write("romfs:/app.nro")
 
         # 4. Empaquetamos mediante hacbrewpack
         os.makedirs(out_dir, exist_ok=True)
@@ -93,13 +149,19 @@ def construir_standalone_nsp(nro_path, romfs_dir, out_dir):
         os.makedirs(nsp_temp_out, exist_ok=True)
 
         print("Empaquetando con hacbrewpack...")
+        hacbrewpack_bin = ENV_NTON.get("hacbrewpack")
+        keys_path = ENV_NTON.get("keys")
+        if not keys_path or not os.path.exists(keys_path):
+            print(f"[ERROR] No se encontraron las claves prod.keys en {keys_path}.")
+            return False
+
         cmd = [
-            HACBREWPACK,
+            hacbrewpack_bin,
             "--titleid", TITLE_ID,
             "--titlename", TITLE_NAME,
             "--titlepublisher", TITLE_PUBLISHER,
             "--nspdir", nsp_temp_out,
-            "-k", PROD_KEYS
+            "-k", keys_path
         ]
         res = subprocess.run(cmd, cwd=staging, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         if res.returncode != 0:
@@ -107,10 +169,9 @@ def construir_standalone_nsp(nro_path, romfs_dir, out_dir):
             print(res.stdout)
             return False
 
-        # Renombramos y movemos el NSP resultante a instalacion/
+        # Renombramos y movemos el NSP resultante a out_dir
         built_nsp = os.path.join(nsp_temp_out, f"{TITLE_ID}.nsp")
         if not os.path.exists(built_nsp):
-            # Buscamos cualquier .nsp generado
             for item in os.listdir(nsp_temp_out):
                 if item.endswith(".nsp"):
                     built_nsp = os.path.join(nsp_temp_out, item)
@@ -118,7 +179,7 @@ def construir_standalone_nsp(nro_path, romfs_dir, out_dir):
 
         final_nsp = os.path.join(out_dir, f"FTL_Standalone_RomFS_[{TITLE_ID}].nsp")
         shutil.copy2(built_nsp, final_nsp)
-        print(f"\n[EXITO] Standalone NSP generado correctamente:")
+        print(f"\n[EXITO] Standalone NSP nativo generado correctamente:")
         print(f"  -> {os.path.abspath(final_nsp)} ({os.path.getsize(final_nsp)/(1024*1024):.2f} MB)")
         return True
 
@@ -131,6 +192,19 @@ def construir_forwarder_nsp(out_dir):
     print("Construyendo Forwarder NSP (Acceso directo a MicroSD)")
     print("=" * 60)
 
+    hacbrewpack_bin = ENV_NTON.get("hacbrewpack")
+    exefs_template = ENV_NTON.get("exefs")
+    logo_template = ENV_NTON.get("logo")
+    keys_path = ENV_NTON.get("keys")
+
+    if not hacbrewpack_bin or not os.path.exists(hacbrewpack_bin):
+        print("[ERROR] No se localizó 'hacbrewpack'. Asegúrate de tener instalado 'nton' (pip install nton).")
+        return False
+
+    if not keys_path or not os.path.exists(keys_path):
+        print(f"[ERROR] No se encontraron las claves prod.keys en {keys_path}.")
+        return False
+
     staging = os.path.abspath("temp_forwarder_build")
     if os.path.exists(staging):
         shutil.rmtree(staging)
@@ -138,9 +212,9 @@ def construir_forwarder_nsp(out_dir):
 
     try:
         exefs_dir = os.path.join(staging, "exefs")
-        shutil.copytree(EXEFS_TEMPLATE, exefs_dir)
+        shutil.copytree(exefs_template, exefs_dir)
         logo_dir = os.path.join(staging, "logo")
-        shutil.copytree(LOGO_TEMPLATE, logo_dir)
+        shutil.copytree(logo_template, logo_dir)
 
         control_dir = os.path.join(staging, "control")
         os.makedirs(control_dir, exist_ok=True)
@@ -160,12 +234,12 @@ def construir_forwarder_nsp(out_dir):
         os.makedirs(nsp_temp_out, exist_ok=True)
 
         cmd = [
-            HACBREWPACK,
+            hacbrewpack_bin,
             "--titleid", TITLE_ID,
             "--titlename", TITLE_NAME,
             "--titlepublisher", TITLE_PUBLISHER,
             "--nspdir", nsp_temp_out,
-            "-k", PROD_KEYS
+            "-k", keys_path
         ]
         res = subprocess.run(cmd, cwd=staging, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         if res.returncode != 0:
@@ -190,10 +264,33 @@ def construir_forwarder_nsp(out_dir):
         if os.path.exists(staging):
             shutil.rmtree(staging)
 
-if __name__ == "__main__":
-    nro = sys.argv[1] if len(sys.argv) > 1 else "bin/ftl.nro"
-    romfs = sys.argv[2] if len(sys.argv) > 2 else "romfs"
-    salida = sys.argv[3] if len(sys.argv) > 3 else "instalacion"
+def localizar_nso(ruta_sugerida=None):
+    if ruta_sugerida and os.path.exists(ruta_sugerida):
+        return ruta_sugerida
+    candidatos = [
+        "bin/main",
+        "build/main",
+        "main"
+    ]
+    for c in candidatos:
+        if os.path.exists(c):
+            return c
+    return None
 
-    construir_standalone_nsp(nro, romfs, salida)
-    construir_forwarder_nsp(salida)
+if __name__ == "__main__":
+    nso_arg = sys.argv[1] if len(sys.argv) > 1 else None
+    romfs_arg = sys.argv[2] if len(sys.argv) > 2 else "romfs"
+    salida_arg = sys.argv[3] if len(sys.argv) > 3 else "instalacion"
+
+    nso_resuelto = localizar_nso(nso_arg)
+
+    if nso_resuelto and os.path.exists(romfs_arg):
+        construir_standalone_nsp(nso_resuelto, romfs_arg, salida_arg)
+    else:
+        if not nso_resuelto:
+            print("[INFO] No se localizó el binario NSO 'main' para Standalone. Omitiendo Standalone NSP.")
+        if not os.path.exists(romfs_arg):
+            print(f"[INFO] Carpeta RomFS '{romfs_arg}' no encontrada. Omitiendo Standalone NSP.")
+
+    construir_forwarder_nsp(salida_arg)
+

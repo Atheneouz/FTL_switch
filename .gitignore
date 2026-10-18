@@ -4,20 +4,36 @@ ipa/*.ipa
 *.ipa
 *.zip
 *.tar.*
+romfs/
 
-# Directorios de compilación
+# Directorios de compilación y artefactos de CI
 build/
 build-*/
+build_artifact*/
 bin/
 out/
 sd_card/
 cmake-build-*/
 .cache/
+temp_*/
+
+# Paquetes NSP generados (mantenemos el forwarder ligero en instalacion/)
+*.nsp
+!instalacion/FTL_Forwarder_*.nsp
+*.nsz
+*.xci
+main
 
 # Binarios generados
 *.elf
 *.nro
 *.nacp
+
+# Python y herramientas de pruebas locales
+__pycache__/
+*.py[cod]
+tools/ryujinx/
+scratch/
 
 # Archivos de entorno y temporales del sistema
 .DS_Store

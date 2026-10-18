@@ -3,7 +3,19 @@ import sys
 import shutil
 import zipfile
 
-def preparar_carpeta_romfs(origen_sd="sd_card/switch/ftl", ipa_path="ipa/FTL_1.6.21_ios_8.0.ipa", output_dir="romfs"):
+def localizar_ipa(ruta_sugerida=None):
+    if ruta_sugerida and os.path.exists(ruta_sugerida):
+        return ruta_sugerida
+    if os.path.isdir("ipa"):
+        for arch in os.listdir("ipa"):
+            if arch.lower().endswith(".ipa"):
+                return os.path.join("ipa", arch)
+    for arch in os.listdir("."):
+        if arch.lower().endswith(".ipa"):
+            return arch
+    return None
+
+def preparar_carpeta_romfs(origen_sd="sd_card/switch/ftl", ipa_path=None, output_dir="romfs"):
     print("=" * 60)
     print("Preparando carpeta RomFS para Standalone NSP (FTL Switch)")
     print("=" * 60)
@@ -17,7 +29,7 @@ def preparar_carpeta_romfs(origen_sd="sd_card/switch/ftl", ipa_path="ipa/FTL_1.6
     # 1. Intentamos obtener los archivos desde la carpeta ya preparada en sd_card/
     if os.path.exists(os.path.join(origen_sd, "FTL")) and os.path.exists(os.path.join(origen_sd, "FTL.app")):
         print(f"Copiando recursos desde {origen_sd}...")
-        
+
         # Copiamos el binario Mach-O si no existe ya
         if not os.path.exists(dest_bin):
             shutil.copy2(os.path.join(origen_sd, "FTL"), dest_bin)
@@ -33,9 +45,14 @@ def preparar_carpeta_romfs(origen_sd="sd_card/switch/ftl", ipa_path="ipa/FTL_1.6
             print(f"[INFO] Carpeta de recursos ya presente en {dest_app}")
 
     # 2. Si no esta en sd_card, intentamos extraer directamente del archivo IPA
-    elif os.path.exists(ipa_path):
-        print(f"Extrayendo recursos directamente desde {ipa_path}...")
-        with zipfile.ZipFile(ipa_path, 'r') as z:
+    else:
+        ipa_detectado = localizar_ipa(ipa_path)
+        if not ipa_detectado:
+            print("[ERROR] No localizamos la carpeta sd_card/switch/ftl ni ningún archivo IPA en 'ipa/'.")
+            return False
+
+        print(f"Extrayendo recursos directamente desde {ipa_detectado}...")
+        with zipfile.ZipFile(ipa_detectado, 'r') as z:
             app_prefix = None
             for name in z.namelist():
                 if name.endswith("FTL.app/") or name.endswith("FTL.app/FTL"):
@@ -43,7 +60,7 @@ def preparar_carpeta_romfs(origen_sd="sd_card/switch/ftl", ipa_path="ipa/FTL_1.6
                     break
 
             if not app_prefix:
-                print("[ERROR] No se localizo FTL.app dentro del archivo IPA.")
+                print("[ERROR] No se localizó 'FTL.app' dentro del paquete IPA.")
                 return False
 
             os.makedirs(dest_app, exist_ok=True)
@@ -61,15 +78,12 @@ def preparar_carpeta_romfs(origen_sd="sd_card/switch/ftl", ipa_path="ipa/FTL_1.6
                         with z.open(info) as src, open(target, "wb") as dst:
                             shutil.copyfileobj(src, dst)
                         extraidos += 1
-            print(f"[OK] Extraidos {extraidos} archivos en {dest_app}")
+            print(f"[OK] Extraídos {extraidos} archivos en {dest_app}")
 
             app_bin = os.path.join(dest_app, "FTL")
             if os.path.exists(app_bin):
                 shutil.copy2(app_bin, dest_bin)
                 print(f"[OK] Copiado binario Mach-O -> {dest_bin}")
-    else:
-        print("[ERROR] No se encontro ni la carpeta sd_card/switch/ftl ni el archivo IPA.")
-        return False
 
     # Verificamos que los componentes criticos esten presentes
     dat_path = os.path.join(dest_app, "ftl.dat")
@@ -81,22 +95,13 @@ def preparar_carpeta_romfs(origen_sd="sd_card/switch/ftl", ipa_path="ipa/FTL_1.6
     print(f"\n[EXITO] Recursos RomFS listos en: {os.path.abspath(output_dir)}")
     print(f"  - Binario Mach-O: {dest_bin} ({os.path.getsize(dest_bin)/(1024*1024):.2f} MB)")
     print(f"  - Paquete FTL.app: {dest_app} (ftl.dat = {tam_dat_mb:.2f} MB)")
-
-    print("\n" + "=" * 60)
-    print("COMANDOS PARA GENERAR EL STANDALONE NSP:")
-    print("=" * 60)
-    print("Opcion 1: Con NRO2NSP en consola:")
-    print("  python nro2nsp.py --nro bin/ftl.nro --romfsorig romfs --titlename \"FTL\" --author \"Subset Games\" --titleid 05B1745464F50000 --icon assets/icon.jpg")
-    print("\nOpcion 2: Con NSC_BUILDER:")
-    print("  1. Abrir NSC_BUILDER -> Modo 2 (Create NSP).")
-    print("  2. Seleccionar el NRO generado (bin/ftl.nro).")
-    print("  3. Asignar la carpeta 'romfs' como particion RomFS.")
-    print("  4. Configurar TitleID (ej. 05B1745464F50000) y compilar.")
-    print("=" * 60)
+    print("\nPara empaquetar el juego en Standalone NSP:")
+    print("  python tools/build_nsp.py")
     return True
 
 if __name__ == "__main__":
     origen = sys.argv[1] if len(sys.argv) > 1 else "sd_card/switch/ftl"
-    ipa = sys.argv[2] if len(sys.argv) > 2 else "ipa/FTL_1.6.21_ios_8.0.ipa"
+    ipa = sys.argv[2] if len(sys.argv) > 2 else None
     salida = sys.argv[3] if len(sys.argv) > 3 else "romfs"
     preparar_carpeta_romfs(origen, ipa, salida)
+
