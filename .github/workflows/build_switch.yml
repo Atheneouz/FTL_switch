@@ -21,7 +21,9 @@ jobs:
 
       - name: Instalar dependencias del sistema y de Switch
         run: |
-          apt-get update && apt-get install -y cmake ninja-build curl xz-utils patch clang lld python3
+          apt-get update && apt-get install -y \
+            cmake ninja-build curl xz-utils patch clang lld python3 \
+            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross
           dkp-pacman -Syu --noconfirm
           dkp-pacman -S --needed --noconfirm \
             switch-mesa \
@@ -43,13 +45,14 @@ jobs:
           
           mkdir -p /tmp/libcxx-build /tmp/libcxx-out
           cmake -G Ninja -S /tmp/llvm-src/runtimes -B /tmp/libcxx-build \
-            -DCMAKE_SYSTEM_NAME=Generic \
+            -DCMAKE_SYSTEM_NAME=Linux \
             -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
             -DCMAKE_C_COMPILER=clang \
             -DCMAKE_CXX_COMPILER=clang++ \
-            -DCMAKE_C_COMPILER_TARGET=aarch64-none-elf \
-            -DCMAKE_CXX_COMPILER_TARGET=aarch64-none-elf \
-            -DCMAKE_ASM_COMPILER_TARGET=aarch64-none-elf \
+            -DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu \
+            -DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu \
+            -DCMAKE_ASM_COMPILER_TARGET=aarch64-linux-gnu \
+            -DCMAKE_SYSROOT=/usr/aarch64-linux-gnu \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=/tmp/libcxx-out \
             -DLLVM_ENABLE_RUNTIMES="libunwind;libcxxabi;libcxx" \
@@ -71,8 +74,8 @@ jobs:
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
             -DLIBCXX_USE_COMPILER_RT=OFF -DLIBCXXABI_USE_COMPILER_RT=OFF -DLIBUNWIND_USE_COMPILER_RT=OFF \
             -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
-            -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -D_LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION=3 -D_LIBCPP_DARWIN_CTYPE_ABI -fc++-abi=arm -isystem /opt/devkitpro/devkitA64/aarch64-none-elf/include" \
-            -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -isystem /opt/devkitpro/devkitA64/aarch64-none-elf/include"
+            -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -D_LIBCPP_PROVIDES_DEFAULT_RUNE_TABLE -D_LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION=3 -D_LIBCPP_DARWIN_CTYPE_ABI -fc++-abi=arm" \
+            -DCMAKE_C_FLAGS="-fno-omit-frame-pointer"
           
           ninja -C /tmp/libcxx-build cxx cxxabi unwind
           ninja -C /tmp/libcxx-build install-cxx install-cxxabi install-unwind
