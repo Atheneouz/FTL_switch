@@ -1,8 +1,35 @@
-# Archivos de juego iOS (FTL: Faster Than Light)
+# FTL iOS Package Directory / Archivos de juego iOS
+
+[English](#english) | [Español](#español)
+
+---
+
+<a name="english"></a>
+## English
+
+Place your decrypted copy of **FTL: Faster Than Light for iPad (version 1.6.21)** in `.ipa` format inside this directory (e.g. `FTL_1.6.21_ios_8.0.ipa` or any `.ipa` file).
+
+### How to Use
+
+Once your `.ipa` file is placed here:
+
+1. Run the preparation tool:
+   ```bash
+   python tools/prepare_sd_card.py
+   ```
+2. The script will automatically detect the `.ipa` package and extract the ARM64 executable (`FTL`), the resource folder (`FTL.app`), fonts, and audio into `sd_card/switch/ftl/`.
+3. Copy the resulting `switch` folder to the root of your MicroSD card (`sdmc:/`).
+
+> **Legal notice:** For copyright and intellectual property reasons, this repository does not include or distribute proprietary material from Subset Games. Each user must provide their own legitimately acquired copy.
+
+---
+
+<a name="español"></a>
+## Español
 
 Coloca en esta carpeta tu copia descifrada de **FTL: Faster Than Light para iPad (versión 1.6.21)** en formato `.ipa` (por ejemplo `FTL_1.6.21_ios_8.0.ipa` o cualquier archivo con extensión `.ipa`).
 
-## Cómo usarlo
+### Cómo usarlo
 
 Una vez colocado el archivo `.ipa` en esta carpeta:
 

@@ -1,12 +1,144 @@
-# FTL: Faster Than Light para Nintendo Switch
+# FTL: Faster Than Light for Nintendo Switch
+
+[English](#english) | [Español](#español)
+
+---
+
+<a name="english"></a>
+## English
+
+Native port of **FTL: Faster Than Light** (iPad edition) for Nintendo Switch consoles running Custom Firmware (Atmosphère).
+
+This project runs the iOS **ARM64** binary natively on the Switch's CPU (Cortex-A57), translating system calls, rendering, and input through a high-level compatibility layer (HLE) built on `libnx`, `EGL`, and `SDL2`.
+
+### Requirements
+
+1. **Nintendo Switch** with Custom Firmware (Atmosphère).
+2. **Decrypted copy of FTL for iPad v1.6.21** in `.ipa` format.
+3. Package installer on your console such as **DBI** (recommended), Goldleaf, or Tinfoil.
+
+---
+
+### Quick Start Guide for Forks (Build Your Playable Game)
+
+If you have forked this repository, follow these steps to build and prepare your game:
+
+#### Step 1: Obtain the Compiled Binary (`ftl.nro`)
+
+Choose one of two methods:
+
+- **Method A: Via GitHub Actions (Recommended, no toolchains required)**
+  1. In your GitHub repository fork, go to the **Actions** tab.
+  2. Select the workflow **Build Nintendo Switch Homebrew** and click **Run workflow**.
+  3. Once completed, download the **`ftl-switch-build`** artifact.
+  4. Extract `ftl.nro` into the `bin/` folder (or repository root).
+
+- **Method B: Local Compilation with devkitPro (devkitA64)**
+  ```bash
+  cmake -G Ninja -B build -S . \
+    -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake \
+    -DCMAKE_BUILD_TYPE=Release
+
+  cmake --build build
+  ```
+
+#### Step 2: Extract Game Assets from your `.ipa`
+
+1. Place your FTL iOS package (v1.6.21) into the `ipa/` folder (e.g. `ipa/FTL_1.6.21.ipa` or any `.ipa` filename).
+2. Run the automated preparation tool:
+   ```bash
+   python tools/prepare_sd_card.py
+   ```
+3. The script automatically finds your `.ipa` and `ftl.nro`, unpacks the decrypted Mach-O binary, textures, audio, fonts, and sets up `sd_card/switch/ftl/`.
+
+#### Step 3: Copy to MicroSD and Install the Forwarder
+
+1. Connect your Switch MicroSD card to your PC (or use DBI's MTP Responder).
+2. Copy the `switch` folder from `sd_card/` into the root of your MicroSD card (`sdmc:/switch/ftl/`).
+3. Install the included forwarder package:
+   `instalacion/FTL_Forwarder_[0100F71016210000].nsp`
+4. Press the HOME button on your Switch; the **FTL: Faster Than Light** icon will appear on your main menu ready to play.
+
+---
+
+### MicroSD Card Structure
+
+Your MicroSD card will be laid out as follows:
+
+```text
+sdmc:/
+  └── switch/
+        └── ftl/
+              ├── ftl.nro               <-- Switch Homebrew executable
+              ├── FTL                   <-- iPad ARM64 Mach-O binary
+              ├── FTL.app/              <-- Resource bundle (ftl.dat, fonts, audio)
+              ├── save/                 <-- Game saves (created automatically)
+              ├── cache/                <-- Runtime cache
+              └── logs/                 <-- Debug log (ftl.log)
+```
+
+---
+
+### Installation Modes: Forwarder vs Standalone
+
+Inside the `instalacion/` folder you will find:
+
+1. **Forwarder NSP (Included by default, ~0.4 MB)**:
+   - Installs an official shortcut on your Switch HOME Menu.
+   - Launches the game from `sdmc:/switch/ftl/ftl.nro`.
+   - Allows updating the `ftl.nro` binary anytime without reinstalling.
+   - Contains zero copyrighted game assets and is legally distributed directly in this repo.
+
+2. **Standalone Native NSP (Optional, ~246 MB)**:
+   - Bundles the native NSO executable in ExeFS and all game assets in RomFS into a single `.nsp` file requiring no MicroSD files (except saves).
+   - To build it yourself with your own keys:
+     ```bash
+     python tools/prepare_romfs.py
+     python tools/build_nsp.py
+     ```
+
+---
+
+### Controls
+
+The game is adapted for both traditional controllers (Joy-Cons / Pro Controller) and the Nintendo Switch touchscreen.
+
+#### Controller (Joy-Cons / Pro Controller)
+
+| Button | Action |
+|---|---|
+| **Left Stick** | Moves screen cursor (slows and snaps to buttons, rooms, and doors) |
+| **A** | Tap / Select / Hold to drag crew or power |
+| **B / Plus (+)** | Back / Game Pause Menu |
+| **X** | Space combat quick pause |
+| **L / R (or ZL / ZR)** | Zoom out / Zoom in on your ship |
+| **Right Stick** | Pan camera freely when zoomed in |
+| **D-Pad** | Precise cursor adjustments |
+
+#### Touchscreen
+
+- **Tap and Drag**: Operates identically to the original iPad interface.
+- **Multitouch**: Supports pinch-to-zoom and two-finger tap to pause combat.
+
+---
+
+### Credits & Acknowledgments
+
+- **Subset Games**: For creating the masterpiece FTL: Faster Than Light.
+- **Sidd065**: For the [ftl-android](https://github.com/Sidd065/ftl-android) project, which provided the Mach-O loader and UI adaptation foundation.
+- **devkitPro & SwitchBrew**: For the `devkitA64` toolchain and `libnx`.
+
+---
+---
+
+<a name="español"></a>
+## Español
 
 Port nativo de **FTL: Faster Than Light** (versión de iPad) para consolas Nintendo Switch con Custom Firmware (Atmosphère).
 
 Este proyecto ejecuta de forma nativa el binario **ARM64** de iOS en la CPU de la Switch (Cortex-A57), traduciendo las llamadas del sistema y de renderizado mediante una capa de compatibilidad de alto nivel (HLE) sobre `libnx`, `EGL` y `SDL2`.
 
----
-
-## Requisitos
+### Requisitos
 
 1. **Nintendo Switch modificada** con Custom Firmware (Atmosphère).
 2. **Copia propia de FTL para iPad v1.6.21** descifrada en formato `.ipa`.
@@ -14,11 +146,11 @@ Este proyecto ejecuta de forma nativa el binario **ARM64** de iOS en la CPU de l
 
 ---
 
-## Guía Rápida para Forks (Cómo crear tu versión lista para jugar)
+### Guía Rápida para Forks (Cómo crear tu versión lista para jugar)
 
 Si has hecho un fork de este repositorio, estos son los pasos para generar y poner a punto tu juego:
 
-### Paso 1: Obtener el ejecutable compilado (`ftl.nro`)
+#### Paso 1: Obtener el ejecutable compilado (`ftl.nro`)
 
 Tienes dos métodos disponibles:
 
@@ -37,7 +169,7 @@ Tienes dos métodos disponibles:
   cmake --build build
   ```
 
-### Paso 2: Extraer los recursos de tu juego (.ipa)
+#### Paso 2: Extraer los recursos de tu juego (.ipa)
 
 1. Coloca tu archivo `.ipa` de FTL (versión 1.6.21) dentro de la carpeta `ipa/`.
 2. Ejecuta el asistente automatizado:
@@ -46,7 +178,7 @@ Tienes dos métodos disponibles:
    ```
 3. El script detectará tu `.ipa` y el binario `ftl.nro`, extrayendo automáticamente el ejecutable Mach-O descifrado, los gráficos, sonidos, fuentes y creando las carpetas necesarias en `sd_card/switch/ftl/`.
 
-### Paso 3: Copiar a la consola e instalar el Forwarder
+#### Paso 3: Copiar a la consola e instalar el Forwarder
 
 1. Conecta la tarjeta MicroSD al PC o usa el modo MTP Responder de DBI.
 2. Copia la carpeta `switch` de `sd_card/` en la raíz de tu MicroSD (`sdmc:/switch/ftl/`).
@@ -56,7 +188,7 @@ Tienes dos métodos disponibles:
 
 ---
 
-## Estructura en la Tarjeta MicroSD
+### Estructura en la Tarjeta MicroSD
 
 La estructura final en la MicroSD queda configurada de la siguiente forma:
 
@@ -74,7 +206,7 @@ sdmc:/
 
 ---
 
-## Modos de Instalación: Forwarder vs Standalone
+### Modos de Instalación: Forwarder vs Standalone
 
 En la carpeta `instalacion/` dispones de información detallada:
 
@@ -94,11 +226,11 @@ En la carpeta `instalacion/` dispones de información detallada:
 
 ---
 
-## Controles
+### Controles
 
 El juego está optimizado para mandos tradicionales (Joy-Con / Mando Pro) y para la pantalla táctil de Nintendo Switch.
 
-### Mando (Joy-Cons / Mando Pro)
+#### Mando (Joy-Cons / Mando Pro)
 
 | Botón | Acción |
 |---|---|
@@ -110,14 +242,14 @@ El juego está optimizado para mandos tradicionales (Joy-Con / Mando Pro) y para
 | **Stick Derecho** | Desplazar la cámara libremente cuando el zoom está activo |
 | **D-Pad (Cruceta)** | Movimiento preciso del cursor |
 
-### Pantalla Táctil
+#### Pantalla Táctil
 
 - **Toque y Arrastre**: Funciona exactamente igual que en la versión original de iPad.
 - **Multitáctil**: Soporta gestos de pellizco para control del zoom y pulsación con dos dedos para pausar el combate espacial.
 
 ---
 
-## Créditos y Agradecimientos
+### Créditos y Agradecimientos
 
 - **Subset Games**: Por crear la obra maestra FTL: Faster Than Light.
 - **Sidd065**: Por el proyecto [ftl-android](https://github.com/Sidd065/ftl-android), base del cargador Mach-O y de la capa de adaptación de interfaz.
