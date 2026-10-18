@@ -8,6 +8,7 @@ ipa/*.ipa
 # Directorios de compilación
 build/
 build-*/
+bin/
 out/
 cmake-build-*/
 .cache/
