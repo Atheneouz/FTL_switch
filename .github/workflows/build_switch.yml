@@ -22,8 +22,9 @@ jobs:
       - name: Instalar dependencias del sistema y herramientas de compilación
         run: |
           apt-get update && apt-get install -y \
-            cmake ninja-build curl xz-utils patch clang lld python3 \
+            cmake ninja-build curl xz-utils patch python3 lsb-release wget software-properties-common gnupg \
             gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross
+          curl -sL https://apt.llvm.org/llvm.sh | bash -s 19
 
       - name: Preparar y compilar libcxx con Apple ABI
         run: |
@@ -38,8 +39,8 @@ jobs:
           cmake -G Ninja -S /tmp/llvm-src/runtimes -B /tmp/libcxx-build \
             -DCMAKE_SYSTEM_NAME=Linux \
             -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
-            -DCMAKE_C_COMPILER=clang \
-            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_C_COMPILER=clang-19 \
+            -DCMAKE_CXX_COMPILER=clang++-19 \
             -DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu \
             -DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu \
             -DCMAKE_ASM_COMPILER_TARGET=aarch64-linux-gnu \
