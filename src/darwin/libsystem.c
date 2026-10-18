@@ -1216,34 +1216,57 @@ struct lconv *localeconv(void) {
     return &s_lconv;
 }
 
-locale_t newlocale(int category_mask, const char *locale, locale_t base) {
-    init_glibc_ctype();
-    // Newlib solo admite bits de categoria 0x7e (LC_COLLATE a LC_MESSAGES).
-    // Si la mascara es 0 o no tiene bits validos, forzamos 0x7e para que Newlib reserve
-    // memoria dinamica en heap con calloc y copie _C_locale (incluyendo lconv con decimal_point=".").
-    int newlib_mask = category_mask & 0x7e;
-    if (newlib_mask == 0) newlib_mask = 0x7e;
+#define LOCALE_RW_SIZE 1024
 
-    locale_t loc = _newlocale_r(_REENT, newlib_mask, (locale && *locale) ? locale : "C", base);
-    if (!loc) {
-        loc = _newlocale_r(_REENT, 0x7e, "C", NULL);
+static void *s_c_locale_ro = NULL;
+
+static locale_t alloc_rw_locale(locale_t src) {
+    init_glibc_ctype();
+    if (!s_c_locale_ro) {
+        s_c_locale_ro = (void *)_newlocale_r(_REENT, 0x7e, "C", NULL);
     }
-    if (loc) {
-        // LLVM libc++ (compilada para aarch64) espera el puntero a __ctype_b en el offset 0x68 de locale_t
-        *(const unsigned short **)((char *)loc + 0x68) = s_glibc_ctype_b_ptr;
-        // Nos aseguramos de que el campo decimal_point en lconv (offset 0x1e8 en Newlib aarch64) nunca sea NULL
-        struct lconv *lc = (struct lconv *)((char *)loc + 0x1e8);
+    char *buf = (char *)calloc(1, LOCALE_RW_SIZE);
+    if (!buf) return NULL;
+
+    // Copiamos la plantilla _C_locale de Newlib si está disponible (lectura segura de .rodata)
+    if (s_c_locale_ro) {
+        memcpy(buf, s_c_locale_ro, 0x290);
+    }
+    // Si estamos clonando un locale previo y no es de solo lectura, copiamos sus campos
+    if (src && src != (locale_t)-1 && src != (locale_t)s_c_locale_ro) {
+        memcpy(buf, src, 0x290);
+    }
+
+    // Offset 0x68: puntero a __ctype_b para libc++ de aarch64 (escritura en heap RW)
+    *(const unsigned short **)(buf + 0x68) = s_glibc_ctype_b_ptr;
+
+    // Offset 0x1e8: lconv con decimal_point valido
+    struct lconv *lc = (struct lconv *)(buf + 0x1e8);
+    if (!lc->decimal_point || !*lc->decimal_point) {
+        static const char dot[] = ".";
+        lc->decimal_point = (char *)dot;
+    }
+    return (locale_t)buf;
+}
+
+locale_t newlocale(int category_mask, const char *locale, locale_t base) {
+    (void)category_mask; (void)locale;
+    // Si base ya es un buffer RW en heap, lo reusamos; si no, creamos una nueva copia en heap
+    if (base && base != (locale_t)-1 && base != (locale_t)s_c_locale_ro) {
+        *(const unsigned short **)((char *)base + 0x68) = s_glibc_ctype_b_ptr;
+        struct lconv *lc = (struct lconv *)((char *)base + 0x1e8);
         if (!lc->decimal_point || !*lc->decimal_point) {
             static const char dot[] = ".";
             lc->decimal_point = (char *)dot;
         }
+        return base;
     }
-    return loc;
+    return alloc_rw_locale(NULL);
 }
 
 void freelocale(locale_t loc) {
-    if (loc && loc != (locale_t)-1) {
-        _freelocale_r(_REENT, loc);
+    if (loc && loc != (locale_t)-1 && loc != (locale_t)s_c_locale_ro) {
+        free(loc);
     }
 }
 
@@ -1251,15 +1274,16 @@ locale_t uselocale(locale_t loc) {
     init_glibc_ctype();
     static locale_t s_cur_loc = NULL;
     if (!s_cur_loc) {
-        s_cur_loc = newlocale(0x7e, "C", NULL);
+        s_cur_loc = alloc_rw_locale(NULL);
     }
     locale_t prev = s_cur_loc;
     if (loc == (locale_t)-1) {
-        s_cur_loc = newlocale(0x7e, "C", NULL);
+        s_cur_loc = alloc_rw_locale(NULL);
     } else if (loc != (locale_t)0) {
-        s_cur_loc = loc;
-        if (s_cur_loc) {
-            *(const unsigned short **)((char *)s_cur_loc + 0x68) = s_glibc_ctype_b_ptr;
+        if (loc == (locale_t)s_c_locale_ro) {
+            s_cur_loc = alloc_rw_locale(NULL);
+        } else {
+            s_cur_loc = loc;
         }
     }
     return prev;
@@ -1267,15 +1291,7 @@ locale_t uselocale(locale_t loc) {
 
 locale_t duplocale(locale_t loc) {
     if (!loc || loc == (locale_t)-1) loc = uselocale(0);
-    init_glibc_ctype();
-    locale_t dup = _newlocale_r(_REENT, 0x7e, "C", NULL);
-    if (dup && loc) {
-        memcpy(dup, loc, 0x290);
-    }
-    if (dup) {
-        *(const unsigned short **)((char *)dup + 0x68) = s_glibc_ctype_b_ptr;
-    }
-    return dup ? dup : loc;
+    return alloc_rw_locale(loc);
 }
 #endif
 
