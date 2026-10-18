@@ -6,15 +6,23 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "port_log.h"
-
 #ifdef __SWITCH__
 #include <switch.h>
+#include <malloc.h>
+#define PROT_READ 1
+#define PROT_WRITE 2
+#define PROT_EXEC 4
+#define MAP_PRIVATE 2
+#define MAP_ANONYMOUS 0x20
+#define MAP_FAILED ((void *)-1)
+#else
+#include <sys/mman.h>
 #endif
+
+#include "port_log.h"
 
 #define MH_MAGIC_64 0xfeedfacfu
 #define FAT_MAGIC 0xcafebabeu
@@ -201,11 +209,17 @@ int mo_load(const char *path, mo_image *img) {
     // Extra room after the image for "near" trampolines reachable by a 4-byte b.
     const size_t tramp_size = 0x40000;
     size_t reserve = span + tramp_size + align;
+#ifdef __SWITCH__
+    uint8_t *raw = (uint8_t *)memalign(align, reserve);
+    if (!raw) { LOGE("macho: memalign %zu falló", reserve); return -1; }
+    uint8_t *base = raw;
+#else
     uint8_t *raw = mmap(NULL, reserve, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (raw == MAP_FAILED) { LOGE("macho: mmap %zu failed", reserve); return -1; }
     uint8_t *base = (uint8_t *)(((uintptr_t)raw + align - 1) & ~(uintptr_t)(align - 1));
     if (base > raw) munmap(raw, (size_t)(base - raw));
     munmap(base + span + tramp_size, (size_t)(raw + reserve - (base + span + tramp_size)));
+#endif
     img->near_tramp = base + span;
     img->near_tramp_size = tramp_size;
 

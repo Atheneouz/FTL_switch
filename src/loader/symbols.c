@@ -5,7 +5,9 @@
 #include "symbols.h"
 
 #include <ctype.h>
+#ifndef __SWITCH__
 #include <dlfcn.h>
+#endif
 #include <fcntl.h>
 #include <math.h>
 #include <sched.h>

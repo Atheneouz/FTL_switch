@@ -21,6 +21,10 @@
 #include <time.h>
 #include <unistd.h>
 
+#ifdef __SWITCH__
+#include <switch.h>
+#endif
+
 #include "port_log.h"
 #include "../port_main.h"
 
@@ -646,9 +650,19 @@ int darwin_mach_timebase_info(uint32_t *info) {
     return 0;
 }
 int darwin_mach_wait_until(uint64_t deadline) {
+#ifdef __SWITCH__
+    struct timespec cur;
+    clock_gettime(CLOCK_MONOTONIC, &cur);
+    uint64_t now = (uint64_t)cur.tv_sec * 1000000000ull + (uint64_t)cur.tv_nsec;
+    if (deadline > now) {
+        svcSleepThread(deadline - now);
+    }
+    return 0;
+#else
     struct timespec ts = {(time_t)(deadline / 1000000000ull), (long)(deadline % 1000000000ull)};
     while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, NULL) == EINTR) {}
     return 0;
+#endif
 }
 uint32_t darwin_mach_task_self_ = 0x103;
 uint32_t darwin_mach_host_self(void) { return 0x203; }
