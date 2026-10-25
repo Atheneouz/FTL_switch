@@ -1,19 +1,21 @@
 ======================================================================
-  FTL: Faster Than Light - Nintendo Switch Port (NSP Package)
+  FTL: Faster Than Light - Nintendo Switch Port (HOME Menu Forwarder)
 ======================================================================
 
-In this folder you will find the official Forwarder ready to install
-on your Nintendo Switch running Custom Firmware (Atmosphère):
+You can build and install a custom HOME Menu forwarder for FTL:
 
-FTL_Forwarder_[0100F71016210000].nsp (INCLUDED & READY)
+Building the Forwarder NSP:
 ----------------------------------------------------------
-- Type: Native HOME Menu shortcut to the MicroSD card.
-- Size: ~0.4 MB (free of commercial assets, legal to distribute).
-- Directly executes the game located at:
-    sdmc:/switch/ftl/ftl.nro
-- Loads the iOS Mach-O binary 'FTL' and assets from 'FTL.app' on SD.
-- Game saves are preserved automatically in 'sdmc:/switch/ftl/save/'.
-- Allows updating the ftl.nro binary without reinstalling the game.
+Run:
+    python tools/build_nsp.py
+
+Requirements:
+- Python 3 with 'nton' installed (`pip install nton`)
+- Switch encryption keys located at ~/.switch/prod.keys
+
+Output:
+- Generates `instalacion/FTL_Forwarder_[0100F71016210000].nsp`
+- Launches directly from: sdmc:/switch/ftl/ftl.nro
 
 ======================================================================
   INSTALLATION STEPS ON YOUR NINTENDO SWITCH
@@ -25,31 +27,31 @@ FTL_Forwarder_[0100F71016210000].nsp (INCLUDED & READY)
        python tools/prepare_sd_card.py
    - Copy the 'switch' folder from 'sd_card/' to the root of your MicroSD.
 
-2. Install the Forwarder on your console:
-   - Connect the Switch to your PC via USB-C cable.
-   - Open DBI on your Switch and select "Run MTP Responder".
-   - On your PC, navigate to the Switch drive -> "5: MicroSD install" (or "4: NAND install").
-   - Copy the file 'FTL_Forwarder_[0100F71016210000].nsp'.
+2. Install the Forwarder on your console (Optional):
+   - Generate the forwarder NSP using `python tools/build_nsp.py`.
+   - Install `instalacion/FTL_Forwarder_[0100F71016210000].nsp` using DBI,
+     Goldleaf, or your preferred NSP installer.
 
-3. Press the HOME button on your Switch and you will see the
-   "FTL: Faster Than Light" icon ready to launch.
+3. Alternatively, launch `FTL` directly from the Homebrew Menu (Album).
 
 ======================================================================
   VERSION EN ESPAÑOL
 ======================================================================
 
-En esta carpeta dispones del Forwarder oficial listo para instalar en tu
-Nintendo Switch con Custom Firmware (Atmosphère):
+Puedes generar e instalar un acceso directo (Forwarder) para el menú HOME:
 
-FTL_Forwarder_[0100F71016210000].nsp (INCLUIDO Y LISTO)
+Generación del Forwarder NSP:
 ----------------------------------------------------------
-- Tipo: Acceso directo nativo del Menú HOME a la tarjeta MicroSD.
-- Tamaño: ~0.4 MB (libre de datos comerciales, legal para distribuir).
-- Ejecuta directamente el juego ubicado en:
-    sdmc:/switch/ftl/ftl.nro
-- Carga el binario iOS 'FTL' y recursos de 'FTL.app' desde la MicroSD.
-- Las partidas guardadas se conservan en 'sdmc:/switch/ftl/save/'.
-- Permite actualizar el ejecutable ftl.nro sin reinstalar el juego.
+Ejecuta:
+    python tools/build_nsp.py
+
+Requisitos:
+- Python 3 con 'nton' instalado (`pip install nton`)
+- Claves de la consola en ~/.switch/prod.keys
+
+Resultado:
+- Genera `instalacion/FTL_Forwarder_[0100F71016210000].nsp`
+- Ejecuta directamente: sdmc:/switch/ftl/ftl.nro
 
 ======================================================================
   PASOS DE INSTALACION EN TU NINTENDO SWITCH
@@ -61,12 +63,10 @@ FTL_Forwarder_[0100F71016210000].nsp (INCLUIDO Y LISTO)
        python tools/prepare_sd_card.py
    - Copia la carpeta 'switch' de 'sd_card/' a la raíz de tu MicroSD.
 
-2. Instalamos el Forwarder en la consola:
-   - Conecta la Switch al PC con cable USB-C.
-   - Abre DBI en la Switch y pulsa "Run MTP Responder".
-   - En tu PC entra en la unidad Switch -> "5: MicroSD install" (o "4: NAND install").
-   - Copia el archivo 'FTL_Forwarder_[0100F71016210000].nsp'.
+2. Instalamos el Forwarder en la consola (Opcional):
+   - Genera el forwarder NSP ejecutando `python tools/build_nsp.py`.
+   - Instala `instalacion/FTL_Forwarder_[0100F71016210000].nsp` con DBI,
+     Goldleaf o tu instalador de paquetes favorito.
 
-3. Pulsa el botón HOME en tu Switch y verás el icono de
-   "FTL: Faster Than Light" listo para jugar.
+3. O bien abre el juego directamente desde el Homebrew Menu (Álbum).
 ======================================================================

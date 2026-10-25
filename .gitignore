@@ -17,9 +17,8 @@ cmake-build-*/
 .cache/
 temp_*/
 
-# Paquetes NSP generados (mantenemos el forwarder ligero en instalacion/)
+# Paquetes NSP generados
 *.nsp
-!instalacion/FTL_Forwarder_*.nsp
 *.nsz
 *.xci
 main

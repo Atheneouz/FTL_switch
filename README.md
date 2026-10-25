@@ -51,13 +51,16 @@ Choose one of two methods:
    ```
 3. The script automatically finds your `.ipa` and `ftl.nro`, unpacks the decrypted Mach-O binary, textures, audio, fonts, and sets up `sd_card/switch/ftl/`.
 
-#### Step 3: Copy to MicroSD and Install the Forwarder
+#### Step 3: Copy to MicroSD and Launch
 
 1. Connect your Switch MicroSD card to your PC (or use DBI's MTP Responder).
 2. Copy the `switch` folder from `sd_card/` into the root of your MicroSD card (`sdmc:/switch/ftl/`).
-3. Install the included forwarder package:
-   `instalacion/FTL_Forwarder_[0100F71016210000].nsp`
-4. Press the HOME button on your Switch; the **FTL: Faster Than Light** icon will appear on your main menu ready to play.
+3. You can launch the game directly from the **Homebrew Menu** (`ftl.nro`).
+4. *(Optional)* To create a shortcut icon on your Switch HOME Menu, generate and install the forwarder:
+   ```bash
+   python tools/build_nsp.py
+   ```
+   Then install the generated `instalacion/FTL_Forwarder_[0100F71016210000].nsp` with DBI.
 
 ---
 
@@ -79,15 +82,12 @@ sdmc:/
 
 ---
 
-### Installation: Homebrew Forwarder (NSP Package)
+### Homebrew Forwarder (Optional HOME Menu Shortcut)
 
-Inside the `instalacion/` folder you will find:
-
-- **FTL Forwarder NSP (`FTL_Forwarder_[0100F71016210000].nsp`, ~0.4 MB)**:
-  - Installs an official shortcut directly on your Switch HOME Menu.
-  - Seamlessly launches the homebrew game from `sdmc:/switch/ftl/ftl.nro`.
-  - Allows updating the `ftl.nro` binary anytime on your MicroSD without reinstalling the NSP package.
-  - Contains zero copyrighted game assets and is legally distributed directly in this repository.
+You can launch FTL via the Homebrew Menu (Album), or generate a custom forwarder to play directly from the HOME Menu:
+- Run `python tools/build_nsp.py` to create `instalacion/FTL_Forwarder_[0100F71016210000].nsp`.
+- Installs a direct shortcut on your HOME Menu pointing to `sdmc:/switch/ftl/ftl.nro`.
+- Updating the `ftl.nro` binary on your SD card will not require reinstalling the forwarder.
 
 ---
 
@@ -170,13 +170,16 @@ Tienes dos métodos disponibles:
    ```
 3. El script detectará tu `.ipa` y el binario `ftl.nro`, extrayendo automáticamente el ejecutable Mach-O descifrado, los gráficos, sonidos, fuentes y creando las carpetas necesarias en `sd_card/switch/ftl/`.
 
-#### Paso 3: Copiar a la consola e instalar el Forwarder
-
-1. Conecta la tarjeta MicroSD al PC o usa el modo MTP Responder de DBI.
-2. Copia la carpeta `switch` de `sd_card/` en la raíz de tu MicroSD (`sdmc:/switch/ftl/`).
-3. Instala el paquete de acceso directo incluido:
-   `instalacion/FTL_Forwarder_[0100F71016210000].nsp`
-4. Pulsa el botón HOME en tu consola y verás el icono de **FTL: Faster Than Light** en el menú principal listo para jugar.
+#### Paso 3: Copiar a la consola y ejecutar
+ 
+ 1. Conecta la tarjeta MicroSD al PC o usa el modo MTP Responder de DBI.
+ 2. Copia la carpeta `switch` de `sd_card/` en la raíz de tu MicroSD (`sdmc:/switch/ftl/`).
+ 3. Puedes ejecutar el juego directamente desde el **Homebrew Menu** (`ftl.nro`).
+ 4. *(Opcional)* Si quieres tener un acceso directo en el Menú HOME, genera e instala el forwarder:
+    ```bash
+    python tools/build_nsp.py
+    ```
+    E instala `instalacion/FTL_Forwarder_[0100F71016210000].nsp` mediante DBI.
 
 ---
 
@@ -198,15 +201,12 @@ sdmc:/
 
 ---
 
-### Modo de Instalación: Homebrew Forwarder (Paquete NSP)
+### Acceso directo en el Menú HOME (Forwarder Opcional)
 
-En la carpeta `instalacion/` dispones de:
-
-- **FTL Forwarder NSP (`FTL_Forwarder_[0100F71016210000].nsp`, ~0.4 MB)**:
-  - Instala un acceso directo oficial en el Menú HOME de la consola.
-  - Ejecuta directamente el juego ubicado en `sdmc:/switch/ftl/ftl.nro`.
-  - Permite actualizar el ejecutable `ftl.nro` en cualquier momento en la MicroSD sin necesidad de reinstalar el NSP.
-  - No contiene archivos propietarios, por lo que se distribuye directamente en el repositorio.
+Puedes abrir FTL desde el Homebrew Menu o generar un acceso directo para el Menú HOME:
+- Ejecuta `python tools/build_nsp.py` para compilar `instalacion/FTL_Forwarder_[0100F71016210000].nsp`.
+- Instala un acceso directo directo en el Menú HOME que apunta a `sdmc:/switch/ftl/ftl.nro`.
+- Las actualizaciones del binario `ftl.nro` no requieren reinstalar el forwarder.
 
 ---
 
