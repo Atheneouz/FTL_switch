@@ -114,6 +114,28 @@ The game is adapted for both traditional controllers (Joy-Cons / Pro Controller)
 
 ---
 
+### Mods & Modding
+
+#### Simple / Data Mods (Supported)
+Standard FTL 1.6 mods that modify game data, events, text, blueprints, ships, and graphical assets (XML/PNG) are compatible!
+- **How it works:** FTL on this engine loads its assets from `FTL.app/ftl.dat`. Simple mods can be patched directly into `ftl.dat` on your PC using tools like **Slipstream Mod Manager (SMM)** or **ftlman** before copying the files to your Switch SD card (`sdmc:/switch/ftl/FTL.app/ftl.dat`).
+- **Examples of compatible mods:** Balance mods (e.g. *Twinge's Balance & Bugfix*), custom ships, event tags, graphical enhancements (*HighRes Backgrounds*), and standard weapon packs that do not require engine bytecode modifications.
+
+#### Hyperspace & Overhauls (Work in Progress)
+- **Status:** In active development.
+- **Why it is taking more time:** Frameworks like **Hyperspace** (required by massive overhauls like *Multiverse*) rely on deep native binary hooking, direct memory patching, and custom runtime code injection originally written for x86/x64 PC binaries. Porting this infrastructure to the ARM64 environment on the Switch requires substantial reverse engineering, custom memory management, and rewritten hooks. It is a work in progress, and we ask for your patience while we tackle this complexity.
+
+---
+
+### Settings & Configuration
+
+Game options and port-specific configurations are handled through the game's internal data directory:
+- **Save files & Settings:** Located under `sdmc:/switch/ftl/save/`.
+- **Logs:** Diagnostic logs are written to `sdmc:/switch/ftl/logs/ftl.log`. Check this log if a modded `ftl.dat` causes crashes on boot.
+- **Controls & UI Tweaks:** Traditional touch gestures (pinch-to-zoom, two-finger pause) and controller bindings work seamlessly out of the box with default mappings tuned for Switch handheld and docked modes.
+
+---
+
 ### Credits & Acknowledgments
 
 - **Subset Games**: For creating the masterpiece FTL: Faster Than Light.
@@ -230,6 +252,28 @@ El juego está optimizado para mandos tradicionales (Joy-Con / Mando Pro) y para
 
 - **Toque y Arrastre**: Funciona exactamente igual que en la versión original de iPad.
 - **Multitáctil**: Soporta gestos de pellizco para control del zoom y pulsación con dos dedos para pausar el combate espacial.
+
+---
+
+### Mods y Modding
+
+#### Mods Sencillos / de Datos (Compatibles)
+¡Los mods estándar de FTL 1.6 que modifican eventos, textos, naves, balance o recursos gráficos (XML/PNG) ya funcionan!
+- **Cómo utilizarlos:** El juego carga sus recursos desde `FTL.app/ftl.dat`. Puedes aplicar mods sencillos parcheando previamente `ftl.dat` en tu PC con **Slipstream Mod Manager (SMM)** o **ftlman**, y luego copiando el archivo resultante a tu MicroSD (`sdmc:/switch/ftl/FTL.app/ftl.dat`).
+- **Ejemplos de mods compatibles:** Mods de balance (*Twinge's Balance*), naves personalizadas, retoques gráficos (*HighRes Backgrounds*), nuevos eventos o armas que no requieran alterar la lógica interna del motor.
+
+#### Hyperspace y Grandes Overhauls (En Desarrollo)
+- **Estado:** En desarrollo activo.
+- **Por qué requiere más tiempo:** Modificaciones como **Hyperspace** (necesario para *Multiverse*) no son simples paquetes de datos; dependen de inyección de código en memoria, enganches (*hooks*) nativos y parches binarios diseñados originalmente para PC (x86/x64). Adaptar todo ese ecosistema al binario ARM64 en el entorno de Switch es una tarea de alta complejidad técnica que llevará tiempo. Agradecemos vuestra paciencia mientras avanzamos en ello.
+
+---
+
+### Ajustes y Configuración
+
+Las opciones del juego y las configuraciones del port se gestionan en:
+- **Partidas guardadas y ajustes:** En la carpeta `sdmc:/switch/ftl/save/`.
+- **Registros de depuración (Logs):** Se guardan en `sdmc:/switch/ftl/logs/ftl.log`. Es el primer lugar a consultar si un `ftl.dat` modificado genera algún fallo al arrancar.
+- **Control y visualización:** Dispone de soporte completo táctil y mando con asignaciones preconfiguradas para modo portátil y sobremesa.
 
 ---
 
