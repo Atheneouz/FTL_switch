@@ -113,6 +113,73 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
         -lz
     )
 
+    # Configuración de Hyperspace (librería estática opcional para mods)
+    option(ENABLE_HYPERSPACE "Vincular soporte para Hyperspace en Nintendo Switch" ON)
+    set(HYPERSPACE_LIB "" CACHE FILEPATH "Ruta manual a libHyperspace.a")
+    set(HYPERSPACE_VCPKG_DIR "" CACHE PATH "Ruta al directorio vcpkg_installed/arm64-switch-ftl")
+
+    if(ENABLE_HYPERSPACE)
+        set(HS_FOUND_LIB "")
+        if(HYPERSPACE_LIB AND EXISTS "${HYPERSPACE_LIB}")
+            set(HS_FOUND_LIB "${HYPERSPACE_LIB}")
+        else()
+            set(HS_CANDIDATE_PATHS
+                "${CMAKE_CURRENT_SOURCE_DIR}/hyperspace-src/build-switch-release/libHyperspace.a"
+                "${CMAKE_CURRENT_SOURCE_DIR}/hyperspace-src/build-switch-debug/libHyperspace.a"
+                "${CMAKE_CURRENT_SOURCE_DIR}/hyperspace-src/build/libHyperspace.a"
+                "${CMAKE_CURRENT_SOURCE_DIR}/lib/libHyperspace.a"
+            )
+            foreach(cand ${HS_CANDIDATE_PATHS})
+                if(EXISTS "${cand}")
+                    set(HS_FOUND_LIB "${cand}")
+                    break()
+                endif()
+            endforeach()
+        endif()
+
+        if(HS_FOUND_LIB)
+            message(STATUS "Hyperspace detectado para Nintendo Switch: ${HS_FOUND_LIB}")
+            add_definitions(-DHAVE_HYPERSPACE=1)
+
+            target_include_directories(ftl PRIVATE
+                ${CMAKE_CURRENT_SOURCE_DIR}/hyperspace-src/src
+                ${CMAKE_CURRENT_SOURCE_DIR}/hyperspace-src/src/switch
+                ${CMAKE_CURRENT_SOURCE_DIR}/hyperspace-src/src/android
+            )
+
+            if(NOT HYPERSPACE_VCPKG_DIR)
+                set(VCPKG_CANDIDATES
+                    "${CMAKE_CURRENT_SOURCE_DIR}/hyperspace-src/build-switch-release/vcpkg_installed/arm64-switch-ftl"
+                    "${CMAKE_CURRENT_SOURCE_DIR}/hyperspace-src/build-switch-debug/vcpkg_installed/arm64-switch-ftl"
+                )
+                foreach(cand ${VCPKG_CANDIDATES})
+                    if(EXISTS "${cand}")
+                        set(HYPERSPACE_VCPKG_DIR "${cand}")
+                        break()
+                    endif()
+                endforeach()
+            endif()
+
+            if(HYPERSPACE_VCPKG_DIR AND EXISTS "${HYPERSPACE_VCPKG_DIR}")
+                message(STATUS "Dependencias vcpkg de Hyperspace: ${HYPERSPACE_VCPKG_DIR}")
+                target_include_directories(ftl PRIVATE "${HYPERSPACE_VCPKG_DIR}/include")
+                target_link_directories(ftl PRIVATE "${HYPERSPACE_VCPKG_DIR}/lib")
+            endif()
+
+            target_link_libraries(ftl PRIVATE
+                -Wl,--whole-archive
+                ${HS_FOUND_LIB}
+                -Wl,--no-whole-archive
+                -lminizip
+                -llua
+                -lboost_filesystem
+                -lboost_system
+            )
+        else()
+            message(STATUS "Hyperspace no encontrado en rutas predeterminadas (se puede compilar en hyperspace-src)")
+        endif()
+    endif()
+
     # Generación de metadatos NACP y ejecutable NRO
     set(APP_TITLE "FTL: Faster Than Light")
     set(APP_AUTHOR "Subset Games / Sidd065 / FTL-Switch")

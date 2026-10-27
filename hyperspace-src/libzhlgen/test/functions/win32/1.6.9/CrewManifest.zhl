@@ -1,0 +1,45 @@
+"578d7c240883e4f0ff77fc5589fa89e557565389cf83ec3c8b5a":  // unique sig
+__thiscall void CrewManifest::SetPosition(CrewManifest *this, Point p); // 004da5d0 DWARF original prototype
+".5589e5538b91":  // unique sig
+__thiscall bool CrewManifest::LockWindow(CrewManifest *this); // 004da6d0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565389cb8d7d94":  // unique sig
+__thiscall void CrewManifest::constructor(CrewManifest *this);
+".5589e55756538bb9d8":  // unique sig
+__thiscall void CrewManifest::ClearCrew(CrewManifest *this); // 004dac50 DWARF original prototype
+".57":  // non-unique sig
+__thiscall void CrewManifest::OnKeyDown(CrewManifest *this, SDLKey key);
+".57":  // non-unique sig
+__thiscall void CrewManifest::OnKeyUp(CrewManifest *this, SDLKey key);
+".57":  // non-unique sig
+__thiscall void CrewManifest::OnTextInput(CrewManifest *this, SDLKey key);
+".578d7c240883e4f0ff77fc5589e557565383ec1c8b91d40000008b81d80000008b3729d0c1f80285c074??89cf31dbeb??8b97d40000008b87d800000083c30129d0c1f80239c373??8b0c9ae8????????84c075??8b87d40000008b0c98893424e8????????83ec04eb??908d7426008d65f45b5e5f5d8d67f85fc204006690578d7c240883e4f0ff77fc5589e55756538d":  // unique sig
+__thiscall void CrewManifest::OnTextEvent(CrewManifest *this, CEvent::TextEvent event);
+".578d7c240883e4f0ff77fc5589e55756538d45cc89":  // unique sig
+__thiscall void CrewManifest::Update(CrewManifest *this);
+".5589e557565389ce83e4f083ec108bb9d80000008b91d4000000c701????????89f829d083f8037e??31db908d7426008b0c9a85c974??8b01ff50048b96d40000008bbed800000089f883c30129d0c1f80239d87f??8b461c8996d8000000890424e8????????8d8e20020000e8????????8d8ee0000000e8????????8b86d400000085c074??890424e8????????8b86ac0000008d96b400000039d074??890424e8????????8b86900000008d969800000039d074??890424e8????????8b46748d567c39d074??890424e8????????8b46548d565c39d074??890424e8????????8b463883":  // unique sig
+__thiscall void CrewManifest::destructor(CrewManifest *this); // 004daff0 DWARF original prototype
+".5589e557565389ce83e4f083ec108bb9d80000008b91d4000000c701????????89f829d083f8037e??31db908d7426008b0c9a85c974??8b01ff50048b96d40000008bbed800000089f883c30129d0c1f80239d87f??8b461c8996d8000000890424e8????????8d8e20020000e8????????8d8ee0000000e8????????8b86d400000085c074??890424e8????????8b86ac0000008d96b400000039d074??890424e8????????8b86900000008d969800000039d074??890424e8????????8b46748d567c39d074??890424e8????????8b46548d565c39d074??890424e8????????8b46388d":  // unique sig
+__thiscall void CrewManifest::destructor1(CrewManifest *this); // 004db0f0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565389cb83ec3c8b078bb9":  // unique sig
+__thiscall void CrewManifest::OnInit(CrewManifest *this, ShipManager *ship);
+".5589e556538b91d4":  // unique sig
+__thiscall void CrewManifest::Close(CrewManifest *this);
+".5589e55389cb83e4f0e8????????8d8b":  // unique sig
+__thiscall void CrewManifest::Open(CrewManifest *this);
+".578d7c240883e4f0ff77fc5589e557565389ce83ec1c8b891c":  // unique sig
+__thiscall void CrewManifest::MouseClick(CrewManifest *this, int mX, int mY);
+".578d7c240883e4f0ff77fc5589e557565389ce83ec4c8b4f":  // unique sig
+__thiscall void CrewManifest::OnTouch(CrewManifest *this, TouchAction action, int id, int x, int y, int initialX, int initialY); // 004db540 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565389cb81ecac000000e8????????8b":  // unique sig
+__thiscall void CrewManifest::OnRender(CrewManifest *this);
+".578d7c240883e4f0ff77fc5589f889e557565389cf83ec2c8b308b40":  // unique sig
+__thiscall void CrewManifest::MouseMove(CrewManifest *this, int mX, int mY);
+".8b811c02":  // unique sig
+__thiscall bool CrewManifest::PriorityPopup(CrewManifest *this); // 00725980 DWARF original prototype
+
+
+
+struct CrewManifest
+{{
+	void _HS_MouseUp(int mX, int mY);
+}};

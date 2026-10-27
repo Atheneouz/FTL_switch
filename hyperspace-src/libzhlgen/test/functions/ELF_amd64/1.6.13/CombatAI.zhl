@@ -1,0 +1,21 @@
+"534889fb4883ec204889":  // unique sig
+cleanup __amd64 void CombatAI::LinkShip(CombatAI *this, ShipManager *ship); // 005dad80 DWARF original prototype
+".488b47608b50":  // unique sig
+cleanup __amd64 void CombatAI::SetTarget(CombatAI *this, ShipManager *target); // 005dadf0 DWARF original prototype
+".41554154554889fd534883ec48488b47":  // unique sig
+cleanup __amd64 void CombatAI::UpdateMindControl(CombatAI *this, bool unk);
+".4155415455534889fb4883ec080f1f":  // unique sig
+cleanup __amd64 void CombatAI::DeactiveWeapons(CombatAI *this); // 005db180 DWARF original prototype
+".803d????????00534889f3":  // unique sig
+cleanup __amd64 Pointf CombatAI::ChooseSecondTarget(CombatAI *this, Pointf *weapon_target); // 005db2b0 DWARF original prototype
+".55534889fb4883ec788b":  // unique sig
+cleanup __amd64 int CombatAI::PrioritizeSystem(CombatAI *this, int weaponType);
+".415455534889fb4883ec304883":  // unique sig
+cleanup __amd64 Pointf CombatAI::ChooseTarget(CombatAI *this, int weaponType); // 005db840 DWARF original prototype
+".415741564155415455534889fb4883ec58807f":  // unique sig
+cleanup __amd64 void CombatAI::UpdateWeapons(CombatAI *this);
+".4154554889fd53e8????????48":  // unique sig
+cleanup __amd64 void CombatAI::OnLoop(CombatAI *this);
+".55534889fb4883ec18803d":  // unique sig
+cleanup __amd64 void CombatAI::constructor(CombatAI *this); // 005dbed0 DWARF original prototype
+

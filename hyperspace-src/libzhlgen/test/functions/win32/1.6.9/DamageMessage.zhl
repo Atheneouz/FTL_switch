@@ -1,0 +1,32 @@
+"5589e5565383e4f083ec108b51":  // unique sig
+__thiscall void DamageMessage::destructor(DamageMessage *this); // 0059cc50 DWARF original prototype
+".807910000f84????????57":  // unique sig
+__thiscall void DamageMessage::OnRender(DamageMessage *this); // 0059cca0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e5575389cb83ec10e8????????80":  // unique sig
+__thiscall void DamageMessage::OnLoop(DamageMessage *this); // 0059cda0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565389cb81ec8c0000008b4f":  // unique sig
+__thiscall void DamageMessage::constructor(DamageMessage *this, float length, Pointf pos, DamageMessage::MessageType type);
+".578d7c240883e4f0ff77fc5589e557565389ce81ec9c02":  // unique sig
+__thiscall void DamageMessage::constructor(DamageMessage *this, float length, int amount, Pointf pos, bool unk);
+
+
+
+struct DamageMessage
+{{
+
+	enum MessageType
+	{
+	  MISS = 0x0,
+	  RESIST = 0x1,
+	};
+
+	DamageMessage(float length, Pointf pos, MessageType type)
+	{
+		constructor(length, pos, type);
+	}
+
+	DamageMessage(float length, int amount, Pointf pos, bool unk)
+	{
+		constructor(length, amount, pos, unk);
+	}
+}};

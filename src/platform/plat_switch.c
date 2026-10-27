@@ -513,6 +513,18 @@ int main(int argc, char **argv) {
     ux_configure(g_sw, g_sh, 60, layout);
     ux_pad_connected(true, "Nintendo Switch Pad");
 
+    // Comprobamos si el usuario tiene mods de Hyperspace instalados (hyperspace.xml o enable_hyperspace)
+    char hs_xml_path[512];
+    snprintf(hs_xml_path, sizeof(hs_xml_path), "%s/hyperspace.xml", docs_path);
+    char hs_flag_path[512];
+    snprintf(hs_flag_path, sizeof(hs_flag_path), "%s/enable_hyperspace", docs_path);
+    struct stat hs_st;
+    const char *hyperspace_opt = NULL;
+    if (stat(hs_xml_path, &hs_st) == 0 || stat(hs_flag_path, &hs_st) == 0) {
+        LOGI("plat_switch: detectada presencia de mod Hyperspace, activando");
+        hyperspace_opt = "builtin";
+    }
+
     port_config cfg = {
         .binary_path = bin_path,
         .bundle_dir  = bundle_path,
@@ -521,7 +533,7 @@ int main(int argc, char **argv) {
         .hw_machine  = "iPad4,1",
         .verbose     = 1,
         .mods_index  = NULL,
-        .hyperspace  = NULL,
+        .hyperspace  = hyperspace_opt,
         .log_dir     = log_path
     };
 

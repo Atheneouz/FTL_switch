@@ -43,6 +43,10 @@ typedef struct hs_host_info
 int hs_android_init(const hs_host_info *info, char *error, size_t error_size);
 typedef int (*hs_android_init_fn)(const hs_host_info *info, char *error, size_t error_size);
 
+/* Nintendo Switch native entry point */
+int hs_switch_init(const hs_host_info *info, char *error, size_t error_size);
+typedef int (*hs_switch_init_fn)(const hs_host_info *info, char *error, size_t error_size);
+
 /* Right clicks for mods' scripts, which the port makes from a gesture (one finger held,
    a tap with another) and from a mouse's right button. Looked up with dlsym, so a
    library without them leaves both off. Both are called on the port's input thread:
@@ -55,6 +59,11 @@ int hs_android_wants_right_click(void);
 void hs_android_right_button(int action, int x, int y);
 typedef int (*hs_android_wants_right_click_fn)(void);
 typedef void (*hs_android_right_button_fn)(int action, int x, int y);
+
+int hs_switch_wants_right_click(void);
+void hs_switch_right_button(int action, int x, int y);
+typedef int (*hs_switch_wants_right_click_fn)(void);
+typedef void (*hs_switch_right_button_fn)(int action, int x, int y);
 
 #ifdef __cplusplus
 }

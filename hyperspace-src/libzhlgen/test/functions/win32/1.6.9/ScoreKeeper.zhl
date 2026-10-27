@@ -1,0 +1,104 @@
+"5789c883c014":  // unique sig
+__thiscall void ScoreKeeper::constructor(ScoreKeeper *this);
+".578d7c240883e4f0ff77fc5589e557565383ec5c8b37c7":  // unique sig
+__thiscall std::pair<int, int> ScoreKeeper::GetShipId(ScoreKeeper *this, const std::string& blueprintName);
+".578d7c240883e4f0ff77fc5589e557565389ce83ec2c8b47048d":  // unique sig
+__thiscall std::string ScoreKeeper::GetShipBlueprint(ScoreKeeper *this, int index);
+".578d7c240883e4f0ff77fc5589e557565389ce83ec2c8b1fa1":  // unique sig
+__thiscall void ScoreKeeper::SaveGame(ScoreKeeper *this, int fd);
+".578d7c240883e4f0ff77fc5589e557565383ec4c8b3f894dc4":  // unique sig
+__thiscall void ScoreKeeper::LoadGame(ScoreKeeper *this, int fd);
+".578d7c240883e4f0ff77fc5589e557565381ec5c05":  // unique sig
+__thiscall void ScoreKeeper::RenderTopScores(ScoreKeeper *this, const std::vector<TopScore>& topScoreList, Point position, int newHighScore);
+".578d7c240883e4f0ff77fc5589e557565389cb83ec1c8b378b06":  // unique sig
+__thiscall void ScoreKeeper::UpdateCrewStat(ScoreKeeper *this, SCrewStats *crewmember); // 00440ca0 DWARF original prototype
+".5731c08d7c240883e4f0ff77fc5589e557565381ec4c":  // unique sig
+__thiscall bool ScoreKeeper::GetShipUnlocked(ScoreKeeper *this, int shipId, int shipVariant);
+".5589e557565389cf31db83e4f083ec10":  // unique sig
+__thiscall void ScoreKeeper::LoadVersionOne(ScoreKeeper *this, int fd); // 004414c0 DWARF original prototype
+".5781c14c":  // unique sig
+__thiscall void ScoreKeeper::SetShipName(ScoreKeeper *this, const std::string &name); // 00441510 DWARF original prototype
+".5781c164":  // unique sig
+__thiscall void ScoreKeeper::SetShipBlueprint(ScoreKeeper *this, const std::string &blueprint); // 00441540 DWARF original prototype
+".8b442404c74124":  // unique sig
+__thiscall void ScoreKeeper::SetSector(ScoreKeeper *this, int sector);
+".8b44240484c0888188":  // unique sig
+__thiscall void ScoreKeeper::SetVictory(ScoreKeeper *this, bool victory);
+".5589e557565389cfb9????????8b":  // unique sig
+__thiscall void ScoreKeeper::AddStat(ScoreKeeper *this, int stat, int amount); // 004415c0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e5575389cbb9????????83ec30e8????????84":  // unique sig
+__thiscall void ScoreKeeper::AddDefeatedShips(ScoreKeeper *this); // 00441600 DWARF original prototype
+".5589e55389cbb9????????83e4f0e8????????84c075??8343":  // unique sig
+__thiscall void ScoreKeeper::AddExploredLocations(ScoreKeeper *this);
+".578d7c240883e4f0ff77fc5589e557565389cbb9????????83ec3c":  // unique sig
+__thiscall void ScoreKeeper::AddScrapCollected(ScoreKeeper *this, int scrap);
+".5589e55389cbb9????????83e4f0e8????????84c075??8383":  // unique sig
+__thiscall void ScoreKeeper::AddCrew(ScoreKeeper *this); // 004417b0 DWARF original prototype
+".5589e553c7":  // unique sig
+__thiscall void ScoreKeeper::Reset(ScoreKeeper *this); // 004417e0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589f889e557565383ec7c8b40":  // unique sig
+__thiscall void ScoreKeeper::SaveScores(ScoreKeeper *this, int file, std::vector<TopScore>& topScores);
+".8b91a402":  // unique sig
+__thiscall int ScoreKeeper::GetTopScore(ScoreKeeper *this); // 00441b10 DWARF original prototype
+".8b41248d14":  // unique sig
+__thiscall int ScoreKeeper::CalculateSectorScore(ScoreKeeper *this); // 00441b30 DWARF original prototype
+".a1????????f30f1005????????83":  // unique sig
+__thiscall int ScoreKeeper::CalculateScore(ScoreKeeper *this); // 00441b50 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565383ec7c8b77":  // unique sig
+__thiscall int ScoreKeeper::AddTopScore(ScoreKeeper *this, TopScore& score, std::vector<TopScore>& topScoreList);
+".578d7c240883e4f0ff77fc5589e557565389ceb9????????81ecec":  // unique sig
+__thiscall void ScoreKeeper::AddTopScore(ScoreKeeper *this, TopScore& topScore, int type);
+".578d7c240883e4f0ff77fc5589e55783ec148b078b57048b78":  // unique sig
+__thiscall void ScoreKeeper::AddTopScore(ScoreKeeper *this, TopScore *score, int type); // 00442790 DWARF original prototype
+".578d7c240883e4f0ff77fc5589f889e557565389cf31f681":  // unique sig
+__thiscall void ScoreKeeper::LoadVersionTwo(ScoreKeeper *this, int fd); // 004427d0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565389cbb9????????81ecac":  // unique sig
+__thiscall void ScoreKeeper::Save(ScoreKeeper *this, bool newHighScore);
+".578d7c240883e4f0ff77fc5589e557565383ec3c8b07894ddcb9":  // unique sig
+__thiscall void ScoreKeeper::WipeProfile(ScoreKeeper *this, bool permanent);
+".5789c88d7c240883e4f0ff77fc5589e557565383ec5c8b57":  // unique sig
+__thiscall void ScoreKeeper::UnlockShip(ScoreKeeper *this, int shipType, int shipVariant, bool save, bool hidePopup);
+".578d7c240883e4f0ff77fc5589e557565383ec1c8b17":  // unique sig
+__thiscall void ScoreKeeper::UnlockShip1(ScoreKeeper *this, int shipId, int layout, bool save, bool hidePopup); // 004437c0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e5575389cbb9????????83ec10e8????????84c075":  // unique sig
+__thiscall void ScoreKeeper::CheckCrystalUnlock(ScoreKeeper *this); // 00443830 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565331f681":  // unique sig
+__thiscall void ScoreKeeper::LoadVersionThree(ScoreKeeper *this, int fd); // 004438c0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589f889e557565381ecec":  // unique sig
+__thiscall void ScoreKeeper::LoadVersionFour(ScoreKeeper *this, int file, int version);
+".578d7c240883e4f0ff77fc5589e55783ec148b078b570489042489542404e8????????8b7dfc83ec08c98d67f85fc20800908d":  // unique sig
+__thiscall void ScoreKeeper::LoadCurrent(ScoreKeeper *this, int fd, int version); // 004444a0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565389cb8db3cc":  // unique sig
+__thiscall void ScoreKeeper::CheckTypes(ScoreKeeper *this);
+".578d7c240883e4f0ff77fc5589e55756538d55d8":  // unique sig
+__thiscall void ScoreKeeper::SetupTopShip(ScoreKeeper *this, int variant);
+".578d7c240883e4f0ff77fc5589e557565389cebb09":  // unique sig
+__thiscall void ScoreKeeper::CycleLeft(ScoreKeeper *this);
+".578d7c240883e4f0ff77fc5589e557565389ce31db83ec1c908db426000000008b96":  // unique sig
+__thiscall void ScoreKeeper::CycleRight(ScoreKeeper *this);
+".578d7c240883e4f0ff77fc5589e557565389ce83c10c":  // unique sig
+__thiscall void ScoreKeeper::Open(ScoreKeeper *this, bool fromGameOver);
+".578d7c240883e4f0ff77fc5589e557565389cb83ec1c80b9c4":  // unique sig
+__thiscall void ScoreKeeper::MouseClick(ScoreKeeper *this, int x, int y);
+".578d7c240883e4f0ff77fc5589e557565389cb83ec2c0fb681":  // unique sig
+__thiscall bool ScoreKeeper::KeyDown(ScoreKeeper *this, SDLKey key);
+".578d7c240883e4f0ff77fc5589f889e557565389cf81ec1c03":  // unique sig
+__thiscall void ScoreKeeper::OnRender(ScoreKeeper *this, bool lastPlaythrough);
+".578d7c240883e4f0ff77fc5589f889e557565389cb83ec2c80":  // unique sig
+__thiscall void ScoreKeeper::MouseMove(ScoreKeeper *this, int mX, int mY);
+".578d7c240883e4f0ff77fc5589e557565389cb83ec5c8b7704":  // unique sig
+__thiscall void ScoreKeeper::OnTouch(ScoreKeeper *this, TouchAction action, int id, int x, int y, int initialX, int initialY); // 004487d0 DWARF original prototype
+".5589e557565389ce83e4f083ec20894c241481c190":  // unique sig
+__thiscall void ScoreKeeper::destructor(ScoreKeeper *this); // 00448df0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565389cb8d75cc":  // unique sig
+__thiscall void ScoreKeeper::OnInit(ScoreKeeper *this);
+
+
+"!8b430cb9(???????\?)c6804412000000c7042401000000":
+ScoreKeeper* Global_ScoreKeeper_Keeper;
+
+
+struct ScoreKeeper
+{{
+    int CountUnlockedShips(int variant);
+}};

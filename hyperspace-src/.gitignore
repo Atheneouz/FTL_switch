@@ -1,0 +1,78 @@
+## FTL Game stuff
+/settings.ini
+*.log
+crashlogs/
+
+## Build Stuff
+bin/
+obj/
+libzhlproject/
+
+## Other
+.save-failed
+
+## Editor stuff
+# KATE
+*.kate-swp
+
+# KDE Dolphin
+*.directory
+
+# CLion config directory
+/.idea
+/cmake-build-debug
+
+# VSCode
+.vscode/settings.json
+
+# clangd index
+/.cache/
+
+# Doxygen
+docs/*
+
+# Created by https://www.toptal.com/developers/gitignore/api/cmake
+# Edit at https://www.toptal.com/developers/gitignore?templates=cmake
+
+### CMake ###
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+
+### CMake Patch ###
+# External projects
+*-prefix/
+
+# End of https://www.toptal.com/developers/gitignore/api/cmake
+
+# Default build location for vscode cmake-tools
+build/
+
+# buildscripts/buildall.sh, .github/workflows/release.yml
+build-*/
+
+# Mac
+.DS_Store
+/vcpkg_installed
+/vcpkg
+
+.vscode/settings.json
+
+test_results/
+
+# Test environment (user-specific)
+tests/.test.env
+
+# Game binaries
+ftl-bin/
+
+# Build-generated sources (FTLGame*, Version.autogen.hpp, swigluarun.h)
+/generated

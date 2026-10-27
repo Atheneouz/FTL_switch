@@ -1,0 +1,22 @@
+"660fefc05589e557":  // unique sig
+__thiscall void ControlsScreen::constructor(ControlsScreen *this); // 0056a680 DWARF original prototype
+".8b413083f8ff74??8b91400500006bc0648d1452030491c7405c00000000c74130fffffffff3":  // unique sig
+__thiscall void ControlsScreen::Close(ControlsScreen *this); // 0056a6f0 DWARF original prototype
+".578d4130":  // unique sig
+__thiscall void ControlsScreen::OnLanguageChange(ControlsScreen *this); // 0056a720 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565383ec7c8b81":  // unique sig
+__thiscall void ControlsScreen::OnLoop(ControlsScreen *this);
+".578d7c240883e4f0ff77fc5589e557565381ecbc01":  // unique sig
+__thiscall void ControlsScreen::OnInit(ControlsScreen *this);
+".578d7c240883e4f0ff77fc5589e557565389ce83ec4c8b0783":  // unique sig
+__thiscall bool ControlsScreen::KeyDown(ControlsScreen *this, SDLKey sym); // 00570a10 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565389cf81ecbc":  // unique sig
+__thiscall void ControlsScreen::OnRender(ControlsScreen *this);
+".578d7c240883e4f0ff77fc5589f889e557565389cf8d99":  // unique sig
+__thiscall void ControlsScreen::MouseMove(ControlsScreen *this, int mX, int mY); // 00571fa0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565389cb83ec1c80b928":  // unique sig
+__thiscall void ControlsScreen::MouseClick(ControlsScreen *this, int mX, int mY); // 005724d0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589f889e557565389ce83ec4c8b3f":  // unique sig
+__thiscall void ControlsScreen::OnTouch(ControlsScreen *this, TouchAction action, int id, int x, int y, int initialX, int initialY); // 00572e00 DWARF original prototype
+".5589e557565383e4f083ec208b9944":  // unique sig
+__thiscall void ControlsScreen::destructor(ControlsScreen *this); // 00573670 DWARF original prototype

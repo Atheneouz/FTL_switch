@@ -1,0 +1,59 @@
+"53be????????4889fb4883ec10488d54240fe8????????488d":  // unique sig
+cleanup __amd64 void LocationEvent::constructor(LocationEvent *this);
+".415741564155415455534889fb4883ec28488b87f0":  // unique sig
+cleanup __amd64 void LocationEvent::destructor1(LocationEvent *this); // 0060a3f0 DWARF original prototype, Itanium D1 destructor
+".4157415641554154554889fd534883ec3883":  // unique sig
+cleanup __amd64 void LocationEvent::ClearEvent(LocationEvent *this, bool force);
+".41564989d641554589c541544989f448":  // unique sig
+cleanup __amd64 void LocationEvent::AddChoice(LocationEvent *this, TextString *text, LocationEvent *event, ChoiceReq req, bool hiddenReward); // 0060bdc0 DWARF original prototype, gog_dwarf_by_linkage
+
+struct LocationEvent depends (LocationEvent::Choice)
+{{
+    struct Choice
+    {
+        LocationEvent *event;
+        TextString text;
+        ChoiceReq requirement;
+        bool hiddenReward;
+    };
+
+    LocationEvent()
+    {
+        this->constructor();
+    }
+
+    std::vector<Choice*> GetChoices()
+    {
+        std::vector<Choice*> ret = std::vector<Choice*>();
+        for (int i=0; i < (int)this->choices.size(); ++i)
+        {
+            ret.push_back(&this->choices[i]);
+        }
+
+        return ret;
+    }
+
+    void AddChoice(LocationEvent* newEvent, const std::string& text, ChoiceReq requirement, bool hiddenReward)
+    {
+        if (newEvent != nullptr) {
+            Choice newChoice;
+            newChoice.event = newEvent;
+            newChoice.text.data = text;
+            newChoice.text.isLiteral = true;
+            newChoice.requirement = requirement;
+            newChoice.hiddenReward = hiddenReward;
+
+            this->choices.push_back(newChoice);
+        }
+    }
+
+    bool RemoveChoice(int index)
+    {
+        if (index >= 0 && index < this->choices.size())
+        {
+            this->choices.erase(this->choices.begin() + index);
+            return true;
+        }
+        return false;
+    }
+}};

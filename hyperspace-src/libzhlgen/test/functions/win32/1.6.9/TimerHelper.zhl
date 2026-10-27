@@ -1,0 +1,23 @@
+"5589e55653c6":  // unique sig
+__thiscall void TimerHelper::Start(TimerHelper *this, int goal);
+".0fb64111c3":  // unique sig
+__thiscall bool TimerHelper::Running(TimerHelper *this);
+".8b4424088901":  // unique sig
+__thiscall void TimerHelper::ResetMinMax(TimerHelper *this, int min, int max);
+".f30f104108f30f5e":  // unique sig
+__thiscall void TimerHelper::SetMaxTime(TimerHelper *this, float max);
+".c6411100c3":  // unique sig
+__thiscall void TimerHelper::Stop(TimerHelper *this);
+".8079110075??c3":  // unique sig
+__thiscall void TimerHelper::Update(TimerHelper *this);
+".0fb6411184":  // unique sig
+__thiscall bool TimerHelper::Done(TimerHelper *this);
+
+
+
+struct TimerHelper
+{{
+	TimerHelper(bool isLoop=false) : loop(isLoop) { }
+	
+	void Start(float goal); // float overload
+}};

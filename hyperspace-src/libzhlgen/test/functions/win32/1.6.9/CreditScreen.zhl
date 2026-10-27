@@ -1,0 +1,10 @@
+"8d410cc74108":  // unique sig
+__thiscall void CreditScreen::constructor(CreditScreen *this);
+".55660fefc089e553bb":  // unique sig
+__thiscall bool CreditScreen::Done(CreditScreen *this);
+".578d7c240883e4f0ff77fc5589e557565389ce8d7dd881":  // unique sig
+__thiscall void CreditScreen::OnRender(CreditScreen *this);
+".5589e5538b450883e4f083":  // unique sig
+__thiscall void CreditScreen::OnTouch(CreditScreen *this, TouchAction action, int id, int x, int y, int initialX, int initialY); // 0055c990 DWARF original prototype
+".578d7c240883e4f0ff77fc5589f889e557565389cf8d9d":  // unique sig
+__thiscall void CreditScreen::Start(CreditScreen *this, const std::string& shipName, const std::vector<std::string>& crewNames);

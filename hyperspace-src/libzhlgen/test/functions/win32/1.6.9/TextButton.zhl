@@ -1,0 +1,66 @@
+"5589e55756538d7954":  // unique sig
+__thiscall void TextButton::ResetPrimitives(TextButton *this);
+".5589e55389cb81c3cc":  // unique sig
+__thiscall void TextButton::destructor(TextButton *this);
+".5589e55389cb83e4f083ec108b4148":  // unique sig
+__thiscall void TextButton::destructor1(TextButton *this); // 00573c60 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565389cb83ec5c80b9dc":  // unique sig
+__thiscall int TextButton::GetIdealButtonWidth(TextButton *this);
+".578d7c240883e4f0ff77fc5589e557565389cb8d49048d732483ec2cc741fc????????e8????????660fefc9":  // unique sig
+__thiscall void TextButton::constructor(TextButton *this);
+".f30f1005????????c6416401f30f1015":  // unique sig
+__thiscall void TextButton::InitColors(TextButton *this); // 00575010 DWARF original prototype
+".5589e557565389cb83e4f083ec10807964000f85????????f30f1005????????c6416401f30f100d????????c781":  // unique sig
+__thiscall void TextButton::SetInactiveColor(TextButton *this, GL_Color color);
+".5589e557565389cb83e4f083ec10807964000f85????????f30f1005????????c6416401f30f100d????????c741740000803ff30f1015????????f30f5ec8c78194":  // unique sig
+__thiscall void TextButton::SetActiveColor(TextButton *this, GL_Color color);
+".5589e557565389cb83e4f083ec10807964000f85????????f30f1005????????c6416401f30f100d????????c741740000803ff30f1015????????f30f5ec8c78184":  // unique sig
+__thiscall void TextButton::SetSelectedColor(TextButton *this, GL_Color color);
+".807964000f85????????f30f1005????????c6416401f30f100d????????c741740000803ff30f1015????????f30f5ec8c781840000000000803ff30f10??????????c7":  // unique sig
+__thiscall void TextButton::SetTextColor(TextButton *this, GL_Color color);
+".8b5424048b442410":  // unique sig
+__thiscall void TextButton::SetAutoWidth(TextButton *this, bool autoWidth, bool autoRightAlign, int margin, int min);
+".80b9b40000000075??c3":  // unique sig
+__thiscall void TextButton::UpdateAutoWidth(TextButton *this);
+".578d7c240883e4f0ff77fc5589e557565389cb83ec5c80b9b4":  // unique sig
+__int64 TextButton::GetSize_orig(TextButton *this<ecx>);
+".578d7c240883e4f0ff77fc5589e557565383ec3c8b073b":  // unique sig
+__thiscall void TextButton::SetSize(TextButton *this, Point size); // 00575cc0 DWARF original prototype
+".5589e5565389cb83e4f083ec50":  // unique sig
+__thiscall void TextButton::SetFont(TextButton *this, int font_); // 00575db0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565389cb83ec3c8b4f0c8b07":  // unique sig
+__thiscall void TextButton::OnInit(TextButton *this, Point pos, Point size, int cornerInset, TextString* buttonLabel, int font);
+".578d7c240883e4f0ff77fc5589e557565389cb83ec5c8b378b4708":  // unique sig
+__thiscall void TextButton::OnInit(TextButton *this, Globals::Rect& rect, int cornerInset, TextString& buttonLabel, int font);
+".578d7c240883e4f0ff77fc5589e557565389ce83ec2c8b57":  // unique sig
+__thiscall void TextButton::SetBaseImage(TextButton *this, const std::string& name, Point pos, int autoWidthMin);
+".578d7c240883e4f0ff77fc5589e557565389cf81ec9c00":  // unique sig
+__thiscall void TextButton::InitPrimitives(TextButton *this);
+".578d7c240883e4f0ff77fc5589e557565389cf81ecac00":  // unique sig
+__thiscall void TextButton::OnRender(TextButton *this);
+
+// ".83c30439f375??8d65f85b5e5dc204008d742600ffd08d65f85b":
+// noHook void TextButton::__DO_NOT_HOOK();
+
+
+struct TextButton depends (CSurface)
+{{
+public:
+	TextButton()
+	{
+		this->constructor();
+	}
+	Point GetSize()
+	{
+		__int64 ret = GetSize_orig();
+		return *((Point*)&ret);
+	}
+
+	~TextButton()
+	{
+		CSurface::GL_DestroyPrimitive(primitives[0]);
+		CSurface::GL_DestroyPrimitive(primitives[1]);
+		CSurface::GL_DestroyPrimitive(primitives[2]);
+		CSurface::GL_DestroyPrimitive(basePrimitive);
+	}
+}};

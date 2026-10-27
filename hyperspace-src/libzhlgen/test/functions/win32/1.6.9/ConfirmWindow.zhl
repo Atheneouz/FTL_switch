@@ -1,0 +1,36 @@
+"5589e55389cb83e4f083ec108b818400000089":  // unique sig
+__thiscall void ConfirmWindow::Close(ConfirmWindow *this);
+".8079040074??5589e553":  // unique sig
+__thiscall void ConfirmWindow::MouseClick(ConfirmWindow *this, int mX, int mY);
+".5589e55389cb83e4f0e8????????8d4324":  // unique sig
+__thiscall void ConfirmWindow::constructor(ConfirmWindow *this);
+".578d7c240883e4f0ff77fc5589f889e557565389cb83ec7c8b50":  // unique sig
+__thiscall void ConfirmWindow::SetText(ConfirmWindow *this, const TextString& text_, int minWidth, bool autoCenter, const TextString& yesText_, const TextString& noText_);
+".578d4144":  // unique sig
+__thiscall void ConfirmWindow::UpdateSize(ConfirmWindow *this); // 00544870 DWARF original prototype
+".5589e55389cb83e4f083ec108b8184000000c701????????890424e8????????8d8b78010000e8????????8d8b88000000e8????????8b43608d536839d074??890424e8????????8b43448d534c39d074??890424e8????????8b431c83":  // unique sig
+__thiscall void ConfirmWindow::destructor(ConfirmWindow *this); // 00544d30 DWARF original prototype
+".5589e55389cb83e4f083ec108b8184000000c701????????890424e8????????8d8b78010000e8????????8d8b88000000e8????????8b43608d536839d074??890424e8????????8b43448d534c39d074??890424e8????????8b431c8d":  // unique sig
+__thiscall void ConfirmWindow::destructor1(ConfirmWindow *this); // 00544db0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565389cb81ecbc0000008b81":  // unique sig
+__thiscall void ConfirmWindow::OnRender(ConfirmWindow *this);
+".578d7c240883e4f0ff77fc5589e557565383ec1c807904":  // unique sig
+__thiscall void ConfirmWindow::MouseMove(ConfirmWindow *this, int mX, int mY);
+".578d7c240883e4f0ff77fc5589e557565383ec3c8b0780":  // unique sig
+__thiscall void ConfirmWindow::OnTouch(ConfirmWindow *this, TouchAction action, int id, int x, int y, int initialX, int initialY); // 00545bd0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e5578db988":  // unique sig
+__thiscall void ConfirmWindow::UpdateButtonPosition(ConfirmWindow *this); // 00545cf0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565389cb83ec3c8b078b570489":  // unique sig
+__thiscall void ConfirmWindow::SetPosition(ConfirmWindow *this, Point pos);
+".578d7c240883e4f0ff77fc5589e557565389cb83ec3ce8????????807b":  // unique sig
+__thiscall void ConfirmWindow::Open(ConfirmWindow *this);
+
+
+
+struct ConfirmWindow
+{{
+	ConfirmWindow()
+	{
+		this->constructor();
+	}
+}};

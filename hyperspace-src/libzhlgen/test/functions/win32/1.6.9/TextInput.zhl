@@ -1,0 +1,43 @@
+"578d7c240883e4f0ff77fc5589e557565389cb83ec3c8b078b4f08":  // unique sig
+__thiscall void TextInput::constructor(TextInput *this, int maxChars, TextInput::AllowedCharType allowedCharType, const std::string& prompt);
+".5789ca8d7c240883e4f0ff77fc5589e557565383ec3c8b078b":  // unique sig
+__thiscall std::string TextInput::GetUTF8(TextInput *this, int start, int end); // 004eeae0 DWARF original prototype
+".578d7c240883e4f0ff77fc5589e557565389ce81eccc0000008b0789":  // unique sig
+__thiscall void TextInput::OnRender(TextInput *this, int font, Point pos);
+".5589e5538b413083":  // unique sig
+__thiscall void TextInput::OnLoop(TextInput *this);
+".8079380074??55":  // unique sig
+__thiscall void TextInput::OnTextEvent(TextInput *this, CEvent::TextEvent event);
+".0fb64138":  // unique sig
+__thiscall bool TextInput::GetActive(TextInput *this);
+".578d7c240883e4f0ff77fc5589e5575389cb83ec108b07c7":  // unique sig
+__thiscall std::string TextInput::GetText(TextInput *this);
+".578d7c240883e4f0ff77fc5589e5575383ec408b411c":  // unique sig
+__thiscall void TextInput::Start(TextInput *this);
+".55c64138":  // unique sig
+__thiscall void TextInput::Stop(TextInput *this);
+".578d7c240883e4f0ff77fc5589e557565389ce8d5de0":  // unique sig
+__thiscall int TextInput::SetText(TextInput *this, const std::string& text);
+".8079380074??57":  // unique sig
+__thiscall void TextInput::OnTextInput(TextInput *this, int asciiChar);
+
+
+
+struct TextInput depends (CEvent)
+{{
+	enum AllowedCharType
+	{
+	  ALLOW_ASCII = 0x0,
+	  ALLOW_LANGUAGE = 0x1,
+	  ALLOW_ANY = 0x2,
+	};
+
+	TextInput()
+	{
+	}
+
+	TextInput(int maxChars, TextInput::AllowedCharType allowedCharType, const std::string& prompt)
+	{
+		this->constructor(maxChars, allowedCharType, prompt);
+	};
+}};

@@ -1,0 +1,171 @@
+name: Build Nintendo Switch Homebrew with Hyperspace (ftl-hyperspace.nro)
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'hyperspace-src/**'
+      - 'src/hyperspace*'
+      - 'src/platform/plat_switch.c'
+      - '.github/workflows/build_switch_hyperspace.yml'
+      - 'CMakeLists.txt'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'hyperspace-src/**'
+      - 'src/hyperspace*'
+      - 'src/platform/plat_switch.c'
+      - '.github/workflows/build_switch_hyperspace.yml'
+      - 'CMakeLists.txt'
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Tipo de compilación (Release o Debug)'
+        required: true
+        default: 'Release'
+        type: choice
+        options:
+          - Release
+          - Debug
+
+jobs:
+  build-switch-hyperspace:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:latest
+
+    steps:
+      - name: Descargar código del repositorio
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configurar permisos de Git e instalar dependencias del sistema
+        run: |
+          git config --global --add safe.directory "*"
+          apt-get update && apt-get install -y \
+            build-essential cmake ninja-build curl xz-utils patch python3 lsb-release wget software-properties-common gnupg \
+            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross \
+            swig lua5.3 liblua5.3-dev luarocks git pkg-config zip unzip tar
+          curl -sL https://apt.llvm.org/llvm.sh | bash -s 19
+          update-alternatives --install /usr/bin/lua lua /usr/bin/lua5.3 100
+          luarocks --lua-version=5.3 install lpeg || true
+          luarocks --lua-version=5.3 install luafilesystem || true
+          # Nos aseguramos de tener switch-zlib en portlibs
+          (dkp-pacman -S --noconfirm switch-zlib || pacman -S --noconfirm switch-zlib || true)
+
+      - name: Preparar y compilar libcxx con Apple ABI
+        run: |
+          echo "Preparando LLVM sources para libcxx con Apple ABI..."
+          mkdir -p /tmp/llvm-src
+          curl -sL https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/llvm-project-19.1.7.src.tar.xz | tar -xJ -C /tmp/llvm-src --strip-components=1
+          
+          # Aplicamos el parche de ABI de Apple para FTL
+          patch -d /tmp/llvm-src -p1 -N < libcxx/llvm-19.1.7-ftl.patch || true
+          
+          mkdir -p /tmp/libcxx-build /tmp/libcxx-out
+          cmake -G Ninja -S /tmp/llvm-src/runtimes -B /tmp/libcxx-build \
+            -DCMAKE_SYSTEM_NAME=Linux \
+            -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+            -DCMAKE_C_COMPILER=clang-19 \
+            -DCMAKE_CXX_COMPILER=clang++-19 \
+            -DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu \
+            -DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu \
+            -DCMAKE_ASM_COMPILER_TARGET=aarch64-linux-gnu \
+            -DCMAKE_SYSROOT=/usr/aarch64-linux-gnu \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/tmp/libcxx-out \
+            -DLLVM_ENABLE_RUNTIMES="libunwind;libcxxabi;libcxx" \
+            -DLIBCXX_ENABLE_SHARED=OFF -DLIBCXXABI_ENABLE_SHARED=OFF -DLIBUNWIND_ENABLE_SHARED=OFF \
+            -DLIBCXX_ENABLE_STATIC=ON -DLIBCXXABI_ENABLE_STATIC=ON -DLIBUNWIND_ENABLE_STATIC=ON \
+            -DLIBCXX_ABI_VERSION=1 -DLIBCXX_ABI_NAMESPACE=__1 \
+            -DLIBCXX_ABI_DEFINES="_LIBCPP_ABI_ALTERNATE_STRING_LAYOUT" \
+            -DLIBCXX_CXX_ABI=libcxxabi \
+            -DLIBCXXABI_USE_LLVM_UNWINDER=ON \
+            -DLIBCXXABI_ENABLE_STATIC_UNWINDER=ON \
+            -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
+            -DLIBCXX_HERMETIC_STATIC_LIBRARY=ON -DLIBCXXABI_HERMETIC_STATIC_LIBRARY=ON \
+            -DLIBUNWIND_HIDE_SYMBOLS=ON \
+            -DLIBUNWIND_ADDITIONAL_COMPILE_FLAGS="-D_LIBUNWIND_FTL_MACHO" \
+            -DLIBCXX_INCLUDE_BENCHMARKS=OFF -DLIBCXX_INCLUDE_TESTS=OFF -DLIBCXXABI_INCLUDE_TESTS=OFF \
+            -DLIBUNWIND_INCLUDE_TESTS=OFF -DLIBCXX_INCLUDE_DOCS=OFF -DLIBUNWIND_INCLUDE_DOCS=OFF \
+            -DLIBCXX_ENABLE_LOCALIZATION=ON -DLIBCXX_ENABLE_WIDE_CHARACTERS=ON \
+            -DLIBCXX_ENABLE_EXCEPTIONS=ON -DLIBCXXABI_ENABLE_EXCEPTIONS=ON \
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+            -DLIBCXX_USE_COMPILER_RT=OFF -DLIBCXXABI_USE_COMPILER_RT=OFF -DLIBUNWIND_USE_COMPILER_RT=OFF \
+            -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+            -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -D_LIBCPP_PROVIDES_DEFAULT_RUNE_TABLE -D_LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION=3 -D_LIBCPP_DARWIN_CTYPE_ABI -fc++-abi=arm" \
+            -DCMAKE_C_FLAGS="-fno-omit-frame-pointer"
+          
+          ninja -C /tmp/libcxx-build cxx cxxabi unwind
+          ninja -C /tmp/libcxx-build install-cxx install-cxxabi install-unwind
+
+      - name: Configurar y compilar libHyperspace.a para Switch
+        run: |
+          export DEVKITPRO=/opt/devkitpro
+          export FTL_LIBCXX=/tmp/libcxx-out
+          BUILD_TYPE="${{ github.event.inputs.build_type || 'Release' }}"
+          
+          cd hyperspace-src
+          echo "Ejecutando setup.sh..."
+          bash buildscripts/switch/setup.sh
+          
+          echo "Ejecutando pre-generate.sh..."
+          bash buildscripts/switch/pre-generate.sh
+          
+          echo "Compilando libHyperspace.a ($BUILD_TYPE)..."
+          bash buildscripts/switch/build.sh "$BUILD_TYPE"
+          cd ..
+
+      - name: Configurar CMake y compilar ftl.nro con Hyperspace
+        run: |
+          BUILD_TYPE="${{ github.event.inputs.build_type || 'Release' }}"
+          cmake -G Ninja -B build -S . \
+            -DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/Switch.cmake \
+            -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
+            -DLIBCXX_DIR=/tmp/libcxx-out \
+            -DENABLE_HYPERSPACE=ON
+          
+          cmake --build build
+
+      - name: Verificar binarios generados
+        run: |
+          find build -maxdepth 2 -type f \( -name "*.nro" -o -name "*.elf" \) -exec ls -lh {} +
+          if [ -f build/ftl.elf.nro ] && [ ! -f build/ftl.nro ]; then
+            cp -v build/ftl.elf.nro build/ftl.nro
+          fi
+          # Guardamos también una copia explícita como ftl-hyperspace.nro
+          cp -v build/ftl.nro build/ftl-hyperspace.nro
+
+      - name: Preparar carpeta de MicroSD si se incluye IPA
+        run: |
+          mkdir -p bin
+          cp -v build/ftl.nro bin/ftl.nro
+          if ls ipa/*.ipa 1> /dev/null 2>&1; then
+            echo "IPA detectado en ipa/, preparando estructura de MicroSD..."
+            python3 tools/prepare_sd_card.py
+            # Si se generó sd_card/switch/ftl, copiamos plantillas de Hyperspace
+            if [ -d "sd_card/switch/ftl" ]; then
+              echo "Copiando archivo base hyperspace.xml a sd_card/switch/ftl/..."
+              cp -v "hyperspace-src/Mod Files/data/hyperspace.xml" sd_card/switch/ftl/ || true
+            fi
+          fi
+
+      - name: Subir artefacto Homebrew (.nro con Hyperspace y Forwarder)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ftl-switch-hyperspace-build
+          path: |
+            build/ftl.nro
+            build/ftl-hyperspace.nro
+            GUIA_HYPERSPACE_MULTIVERSE.md
+            README.md
+            instalacion/FTL_Forwarder_*.nsp
+            instalacion/LEEME.txt
+
+      - name: Subir paquete listo para MicroSD (si se generó con IPA)
+        if: hashFiles('sd_card/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ftl-switch-hyperspace-sdcard-ready
+          path: sd_card/

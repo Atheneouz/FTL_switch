@@ -25,12 +25,40 @@ static void hs_log(int level, const char *msg) {
     else LOGI("%s", msg);
 }
 
+#ifdef __SWITCH__
+extern int hs_switch_init(const hs_host_info *info, char *error, size_t error_size) __attribute__((weak));
+extern int hs_switch_wants_right_click(void) __attribute__((weak));
+extern void hs_switch_right_button(int action, int x, int y) __attribute__((weak));
+#endif
+
 int hyperspace_start(const char *lib, const char *log_dir, const char *data_dir, mo_image *img, char *err,
                      size_t errsize) {
 #ifdef __SWITCH__
-    (void)lib; (void)log_dir; (void)data_dir; (void)img;
-    snprintf(err, errsize, "Hyperspace no está soportado en Nintendo Switch.");
-    return -1;
+    (void)lib;
+    if (!hs_switch_init) {
+        snprintf(err, errsize, "Hyperspace no está vinculado en este ejecutable de Nintendo Switch.");
+        return -1;
+    }
+    hs_host_info info = {
+        .version = HS_HOST_VERSION,
+        .size = sizeof info,
+        .mach_header = img->base,
+        .slide = img->slide,
+        .image_size = img->map_size,
+        .log_dir = log_dir,
+        .data_dir = data_dir,
+        .log = hs_log,
+        .find_macho_unwind = __ftl_find_macho_unwind,
+    };
+    char why[1024] = "";
+    if (hs_switch_init(&info, why, sizeof why) != 0) {
+        snprintf(err, errsize, "Fallo al iniciar Hyperspace: %s", why[0] ? why : "error desconocido (consultar zhl.log)");
+        return -1;
+    }
+    g_wants_right_click = hs_switch_wants_right_click;
+    g_right_button = hs_switch_right_button;
+    LOGI("hyperspace: iniciado con éxito en Nintendo Switch");
+    return 0;
 #else
     LOGI("hyperspace: loading %s", lib);
     void *h = dlopen(lib, RTLD_NOW | RTLD_LOCAL);

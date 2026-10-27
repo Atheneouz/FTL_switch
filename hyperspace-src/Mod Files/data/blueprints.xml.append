@@ -1,0 +1,275 @@
+<systemBlueprint name="temporal">
+	<type>temporal</type>
+	<title id="system_temporal_title"/>
+	<desc id="system_temporal_desc"/>
+	<startPower>1</startPower>
+	<maxPower>3</maxPower>
+	<rarity>1</rarity>
+	<upgradeCost>
+		<level>40</level> <!-- level 2 -->
+		<level>80</level> <!-- level 3 -->
+		<level>120</level> <!-- imaginary level 4 -->
+	</upgradeCost>
+	<cost>80</cost>
+</systemBlueprint>
+
+<augBlueprint name="NANOBOT_DEFENSE_SYSTEM">
+	<title id="aug_NANOBOT_DEFENSE_SYSTEM_title"/>
+	<desc id="aug_NANOBOT_DEFENSE_SYSTEM_desc"/>
+    <cost>30</cost>
+    <bp>4</bp>
+    <rarity>0</rarity>
+    <value>75</value>
+    <stackable>false</stackable>
+</augBlueprint>
+
+<augBlueprint name="FTL_JUMPER_GOOD">
+	<title id="aug_FTL_JUMPER_GOOD_title"/>
+	<desc id="aug_FTL_JUMPER_GOOD_desc"/>
+    <cost>30</cost>
+    <bp>4</bp>
+    <rarity>0</rarity>
+    <value>0</value>
+    <stackable>false</stackable>
+</augBlueprint>
+
+<augBlueprint name="SECTOR_SCANNER">
+	<title id="aug_SECTOR_SCANNER_title"/>
+	<desc id="aug_SECTOR_SCANNER_desc"/>
+    <cost>30</cost>
+    <bp>4</bp>
+    <rarity>0</rarity>
+    <value>7</value> <!--The range of the scanner-->
+    <stackable>false</stackable>
+</augBlueprint>
+
+<augBlueprint name="BOARDER_RECOVERY">
+	<title id="aug_BOARDER_RECOVERY_title"/>
+	<desc id="aug_BOARDER_RECOVERY_desc"/>
+	<cost>50</cost>
+	<bp>8</bp>
+	<rarity>0</rarity>
+	<stackable>false</stackable>
+</augBlueprint>
+
+<augBlueprint name="TELEPORT_RECALL">
+	<title id="aug_TELEPORT_RECALL_title"/>
+	<desc id="aug_TELEPORT_RECALL_desc"/>
+	<cost>150</cost>
+	<rarity>0</rarity>
+	<stackable>false</stackable>
+</augBlueprint>
+
+<augBlueprint name="MIND_ORDER">
+	<title id="aug_MIND_ORDER_title"/>
+	<desc id="aug_MIND_ORDER_desc"/>
+	<cost>50</cost>
+	<bp>8</bp>
+	<rarity>0</rarity>
+	<stackable>false</stackable>
+</augBlueprint>
+
+<augBlueprint name="ARTILLERY_ORDER">
+	<title id="aug_ARTILLERY_ORDER_title"/>
+	<desc id="aug_ARTILLERY_ORDER_desc"/>
+	<cost>50</cost>
+	<bp>8</bp>
+	<rarity>0</rarity>
+	<stackable>false</stackable>
+</augBlueprint>
+
+<augBlueprint name="AUGMENT_SLOT">
+	<title id="aug_AUGMENT_SLOT_title"/>
+	<desc id="aug_AUGMENT_SLOT_desc"/>
+    <cost>30</cost>
+    <bp>4</bp>
+    <rarity>0</rarity>
+    <value>1</value> <!--The amount of augment slots added. Negative values decrease slots.-->
+    <stackable>true</stackable>
+</augBlueprint>
+
+<augBlueprint name="CARGO_SLOT">
+	<title id="aug_CARGO_SLOT_title"/>
+	<desc id="aug_CARGO_SLOT_desc"/>
+    <cost>30</cost>
+    <bp>4</bp>
+    <rarity>0</rarity>
+    <value>1</value> <!--The amount of cargo slots added. Negative values decrease slots.-->
+    <stackable>true</stackable>
+</augBlueprint>
+
+<crewBlueprint name="ghost">
+	<desc id="crew_ghost_desc"/>
+	<cost>50</cost>
+	<bp>2</bp>
+	<title id="crew_ghost_title"/>
+	<short id="crew_ghost_short"/>
+	<rarity>0</rarity>
+	<powerList>
+		<power id="crew_ghost_power_1"/>
+		<power id="crew_ghost_power_2"/>
+		<power id="crew_ghost_power_3"/>
+	</powerList>
+</crewBlueprint>
+
+<!--
+<crewBlueprint name="testCrew">
+	<desc>test race</desc>
+	<cost>50</cost>
+	<bp>2</bp>
+	<title>Test</title>
+	<short>Test</short>
+	<rarity>3</rarity>
+	<powerList>
+		<power>test power</power>
+		<power>test power 2</power>
+		<power>test power 3</power>
+	</powerList>
+</crewBlueprint>
+-->
+
+<!--
+<weaponBlueprint name="WEAPON_NAME">
+	...
+
+	(added blueprint attribute for BURST weapons; allows a certain projectile to inherit the stats of a different blueprint)
+	(does not work for fake projectiles; also all projectiles with the same anim_name will be affected, even if they don't all have the blueprint attribute)
+	(if you want different overrides on the same animation, you will need to make copies of the animation; they can use the same sheet)
+	(tooltips/descriptions will not reflect overrides; you'll need to write custom descriptions)
+	<projectiles>
+		<projectile count="3" fake="false" blueprint="OTHER_BP">anim_name</projectile>
+	</projectiles>
+
+	<freeMissileChance>0.0</freeMissileChance>       Probability that the weapon does not consume missiles when fired. Rolled separately from explosive replicator.
+
+	<descriptionOverride id="">TEXT</descriptionOverride>                 Replaces standard weapon description with custom text. Also replaces extended if the latter is not specified.
+	<advancedDescriptionOverride id="">TEXT</advancedDescriptionOverride> Replaces extended weapon description with custom text.
+	<tooltipOverride id="">TEXT</tooltipOverride>                         Replaces standard weapon tooltip with custom text. Also replaces extended if the latter is not specified.
+	<advancedTooltipOverride id="">TEXT</advancedTooltipOverride>         Replaces extended weapon tooltip with custom text.
+
+	<hideEventTooltip>false</hideEventTooltip>       Prevents showing event tooltip on hover in events; useful for mystery weapons or weapons whose stats should otherwise not be seen on the event screen.
+	<accuracyMod>0</accuracyMod>                     Changes weapon accuracy. This is equivalent to subtracting accuracyMod from the enemy's evasion for this weapon when performing the evasion check.
+	<noSysDamage>false</noSysDamage>                 If true, then normal damage does not inflict corresponding system damage, only actual <sysDamage> will.
+	<noPersDamage>false</noPersDamage>               If true, then normal damage does not inflict corresponding crew damage, only actual <persDamage> will.
+	<ionBeamFix>false</ionBeamFix>                   If true, prevents ion beams from inflicting ion damage to shields on every frame (instead it will be similar to beams hitting zoltan shields).
+	<invisibleBeam>false</invisibleBeam>             If true, prevents beams from being rendered.
+	<simultaneousFire>false</simultaneousFire>       If true, all shots/charges will fire at once, rather than sequentially.
+	<fireTime>0.0</fireTime>                         Overrides the firing animation speed. Default is 1.0 for bombs and charge weapons, and 0.25 for other weapons. Does not apply to beams.
+	<shotLimit>-1</shotLimit>                        The amount of times this weapon can be fired per combat encounter. Negative values indicate no limit.
+	<erosionChance>0</erosionChance>                          Chance to apply erosion (0-10)
+	<erosion>                                                 Leave out any child tags to use the defaults
+		<speed>0.63</speed>                                   How quickly to erode the system, equivalent to sabotage multiplier
+		<maxSpeed>3.15</maxSpeed>                             Maximum for stacking
+		<time>10.0</time>                                     Length of effect
+		<maxTime>25.0</maxTime>                               Maximum for stacking
+		<systemRepairMultiplier>0.75</systemRepairMultiplier> Debuff for repairing the afflicted system
+		<erodeShields>false</erodeShields>                    Whether to do erosion check when hitting shields, similar to ion weapons doing system damage, stun, etc.
+		<roomAnim>                                            Animation to play
+			(uses roomAnim syntax, see custom ships)
+		</roomAnim>
+	</erosion>
+
+	<statBoostChance>0</statBoostChance>             Chance to apply stat boosts as listed below.
+	<statBoosts>                                     Same as statBoosts for crew/augment/etc. - list of all stat boosts to apply.
+		<statBoost>                                  Conditions for stat boost are checked on application. Once applied, the effect is continuous. Use a nested self statboost if you want to check conditions continuously.
+			<duration>10</duration>                  Duration in seconds. If this tag is not included, the stat boost is permanent.
+			...
+		</statBoost>
+	</statBoosts>
+
+	<roomStatBoostChance>0</roomStatBoostChance>     Chance to apply room stat boosts as listed below.
+	<roomStatBoosts>                                 Same as statBoosts but applies a lingering effect to the hit room.
+		<statBoost>                                  Conditions for stat boosts are on top of being restricted to the affected room. If the room cannot be affected, the stat boost is not applied.
+			<duration>10</duration>
+			...
+		</statBoost>
+	</roomStatBoosts>
+
+	<crewSpawnChance>0</crewSpawnChance>             Chance to spawn the crew listed below.
+	<spawnCrew>                                      Include as many <spawnCrew> tags as you need.
+		<race>human</race>                           Race to spawn.
+		<name>Gun-Born</name>                        Custom name to assign.
+		<number>1</number>                           Number of crew to spawn.
+		<healthPercentage>1.0</healthPercentage>     Fraction of max health to spawn with.
+		<lifetime>30</lifetime>                      After this amount of time passes, the crewmember will die permanently.
+		<statBoosts>                                 Stat boosts (temporary or permanent) to apply to the spawned crewmember. Will check conditions on creation only.
+			...
+		</statBoosts>
+		<enemy>false</enemy>                         If true, spawns crew of enemy alignment.
+		<noSlot>false</noSlot>                       If true, forces the crewmember to not take up a slot. Good for temporary spawns.
+	</spawnCrew>
+
+	<iconReplace>ANIMATION</iconReplace>             Replaces the weapon icon in equipment/store/hangar screens. Animation should have a single frame.
+	<iconScale>1.0</iconScale>                       Scales the weapon icon in equipment/store/hangar screens.
+</weaponBlueprint>
+-->
+<!--
+<droneBlueprint name="DRONE_SHIELD">
+	<type>SHIELD</type>
+	<level>1</level>
+	<tip>tip_defense</tip>
+	<title id="drone_DRONE_SHIELD_title"/>
+	<short id="drone_DRONE_SHIELD_short"/>
+	<desc id="drone_DRONE_SHIELD_desc"/>
+	<power>3</power>
+	<cooldown>15000</cooldown>
+	<dodge>0</dodge>
+	<speed>5</speed>
+	<cost>60</cost>
+	<bp>2</bp>
+	<droneImage>drone_shield</droneImage>
+	<rarity>4</rarity>
+	<iconImage>shield</iconImage>
+
+	The following tags can be used to customize shield drones:
+	<chargeSound>shieldDroneCharge</chargeSound> The sound to play as the drone slows down.
+	<activateSound>shieldDroneActivate</activateSound> The sound to play as the drone activates.
+	<slowDuration>1.0</slowDuration> The time it takes for the drone to slow to a stop.
+	<pulseDuration>1.5</pulseDuration> The time it takes for the drone to activate once it has stopped.
+	<layers>1</layers> The number of super shield points added per pulse by the drone.
+	<cooldowns> The amount of time between super shield additions. Varies based on the number of super shield layers active.
+		<noLayers>8.0</noLayers> The names of the nodes are unimportant, and each node is the time for the next integer amount of layers.
+		<oneLayer>10.0</oneLayer>
+		<twoLayers>13.0</twoLayers>
+		<threeLayers>16.0</threeLayers>
+		<moreLayers>20.0</moreLayers> The last value will be used for all super shield values higher than the number of cooldowns provided.
+	</cooldowns>
+</droneBlueprint>
+-->
+
+<!--
+<shipBlueprint name="PLAYER_SHIP_KESTRAL" layout="kestral" img="kestral">
+	<class>Testrel V2</class>
+	<name>The Testrel V2</name>
+	<desc>This class of ship was decommissioned from Federation service years ago. After a number of refits and updating this classic ship is ready for battle.</desc>
+	<systemList>
+		<pilot power="2" room="0" start="true" img="room_pilot"/>
+		<doors power="2" room="2" start="true" img="room_doors"/>
+		<medbay power="2" room="4" start="true" img="room_medbay"/>
+		<oxygen power="2" room="13" start="true" img="room_oxygen"/>
+		<shields power="8" room="5" start="true" img="room_shields"/>
+		<engines power="5" room="14" start="true" img="room_engines"/>
+		<weapons power="7" room="10" start="true" img="room_weapons"/>
+		<drones power="4" room="1" start="true"/>
+		<teleporter power="2" room="15"	start="true"/>
+		<test power="2" room="8" start="true"/>
+	</systemList>
+	<weaponSlots>4</weaponSlots>
+	<droneSlots>2</droneSlots>
+	<weaponList count="4" missiles="16">
+		<weapon name="MISSILES_2"/>
+		<weapon name="LASER_BURST_3"/>
+		<weapon name="MISSILES_2"/>
+		<weapon name="LASER_BURST_3"/>
+	</weaponList>
+	<droneList count="2" drones="10">
+		<drone name="DRONE_BEAM"/>
+		<drone name="REPAIR"/>
+	</droneList>
+	<health amount="30"/>
+	<maxPower amount ="28"/>
+	<crewCount amount = "1" class="ghost"/>
+	<crewCount amount = "1" class="testCrew"/>
+</shipBlueprint>
+-->
+

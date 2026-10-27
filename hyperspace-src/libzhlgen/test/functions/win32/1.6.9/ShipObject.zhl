@@ -1,0 +1,41 @@
+"8b510431c085":  // unique sig
+__thiscall int ShipObject::GetAugmentationCount(ShipObject *this);
+".578d7c240883e4f0ff77fc5589e557565331db83ec2c":  // unique sig
+__thiscall void ShipObject::ClearShipInfo(ShipObject *this);
+".578d7c240883e4f0ff77fc5589f889e557565389cf83ec4c8b008b40":  // unique sig
+__thiscall std::vector<std::string> ShipObject::GetAugmentationList(ShipObject *this);
+".578d7c240883e4f0ff77fc5589e55756538d75a8":  // unique sig
+__thiscall int ShipObject::HasEquipment(ShipObject *this, const std::string& equip);
+".5789ca8d7c240883e4f0ff77fc5589e557565383ec5c8b078b4f":  // unique sig
+__thiscall void ShipObject::SetEquipmentLevel(ShipObject *this, const std::string &blueName, int level); // 0045ff50 DWARF original prototype
+".5789ca8d7c240883e4f0ff77fc5589e55756538d4dd883ec5c8b07894dd08b308b580489f001d874??85f675??c70424????????e8????????8db4260000000083fb0f895dcc0f87????????83fb010f84????????8d4dd085db8d45d8894db8":  // unique sig
+__thiscall int ShipObject::HasAugmentation(ShipObject *this, const std::string& augment);
+".5789ca8d7c240883e4f0ff77fc5589e55756538d4d9081ec9c":  // unique sig
+__thiscall float ShipObject::GetAugmentationValue(ShipObject *this, const std::string& augment);
+".5789ca8d7c240883e4f0ff77fc5589e55756538d4dd883ec5c8b07894dd08b308b580489f001d874??85f675??c70424????????e8????????8db4260000000083fb0f895dcc0f87????????83fb010f84????????8d4dd085db8d45d8894dbc":  // unique sig
+__thiscall void ShipObject::AddEquipment(ShipObject *this, const std::string &blueName); // 00461150 DWARF original prototype
+".5789ca8d7c240883e4f0ff77fc5589e557565383ec7c8b078b4f":  // unique sig
+__thiscall void ShipObject::RemoveEquipment(ShipObject* this, const std::string& blueName, bool completely);
+".5789ca8d7c240883e4f0ff77fc5589e55756538d75":  // unique sig
+__thiscall bool ShipObject::AddAugmentation(ShipObject *this, const std::string& augment);
+".5789ca8d7c240883e4f0ff77fc5589e55756538d4d9081ecac":  // unique sig
+__thiscall void ShipObject::RemoveAugmentation(ShipObject *this, const std::string& augment);
+".5731c08d7c240883e4f0ff77fc5589e557565381ec9c":  // unique sig
+__thiscall void ShipObject::AddAugmentation(ShipObject *this, const std::string &augId, int slot); // 004633b0 DWARF original prototype
+".5589e583e4f083ec10890c24e8????????c9c390909090909090909090909090f3c390909090909090909090909090905589e55389cb83e4f083ec10c7":  // unique sig
+__thiscall void ShipObject::destructor(ShipObject *this); // 00722130 DWARF original prototype
+".f3c390909090909090909090909090905589e55389cb83e4f083ec10c7":  // unique sig
+__thiscall void ShipObject::destructor1(ShipObject *this); // 00722150 DWARF original prototype
+
+"89b5a4feffffe9????????c70424????????e8????????89c60fb68590feffff89f1894424088b8594feffff894424048b858cfeffff890424":
+noHook void ShipObject::__DO_NOT_HOOK();
+
+"!6bc0340305(???????\?)8b4030c3":
+ShipInfo** Global_ShipObject_ShipInfoList;
+
+struct ShipObject
+{{
+	int HasItem(const std::string& equip);
+	int HasCargo(const std::string& equip);
+	void CheckCargo(const std::string& equip, int& ret);
+}};
