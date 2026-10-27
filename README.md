@@ -121,6 +121,24 @@ Standard FTL 1.6 mods that modify game data, events, text, blueprints, ships, an
 - **How it works:** FTL on this engine loads its assets from `FTL.app/ftl.dat`. Simple mods can be patched directly into `ftl.dat` on your PC using tools like **Slipstream Mod Manager (SMM)** or **ftlman** before copying the files to your Switch SD card (`sdmc:/switch/ftl/FTL.app/ftl.dat`).
 - **Examples of compatible mods:** Balance mods (e.g. *Twinge's Balance & Bugfix*), custom ships, event tags, graphical enhancements (*HighRes Backgrounds*), and standard weapon packs that do not require engine bytecode modifications.
 
+The following data/resource mods have been tested and verified to work:
+
+| Mod | What it does |
+|---|---|
+| [Captain's Edition](https://subsetgames.com/forum/viewtopic.php?t=15663) | Big overhaul: events, sectors, ships, weapons. Needs its resource pack, listed first |
+| [Stations Job](https://subsetgames.com/forum/viewtopic.php?t=24424) | Play as a space station |
+| [The RAD Fleet](https://subsetgames.com/forum/viewtopic.php?t=27381) | Replaces all the player ships |
+| [Twinge's Balance & Bugfix](https://subsetgames.com/forum/viewtopic.php?t=26269) | Rebalance and bug fixes |
+| [Vicious Vessels](https://subsetgames.com/forum/viewtopic.php?t=32298) | 40 new enemy ships |
+| [Railguns, Photocasters & More!](https://subsetgames.com/forum/viewtopic.php?t=30294) | New weapons and drones |
+| [The Athena](https://subsetgames.com/forum/viewtopic.php?p=121702) | A ship you kit out yourself at the start |
+| [KRS Obsidian Cruiser](https://github.com/zedseven/ftl-obsidian-cruiser) | New ship in place of Engi B |
+| [HighRes Backgrounds and Planets](https://subsetgames.com/forum/viewtopic.php?t=30003) | Sharper backgrounds and planets |
+| [Detailed Ship Greebles](https://subsetgames.com/forum/viewtopic.php?t=26931) | More detailed hulls |
+| [FTL Event Tags](https://github.com/thrnz/FTLEventTags1.6) | Shows where event choices lead |
+| [Better info](https://subsetgames.com/forum/viewtopic.php?t=38336) | Exact numbers in tooltips |
+| [Extended Pursuit Indicator](https://subsetgames.com/forum/viewtopic.php?t=26289) | Shows the rebel fleet further ahead on the map |
+
 #### Hyperspace & Overhauls (Work in Progress)
 - **Status:** In active development.
 - **Why it is taking more time:** Frameworks like **Hyperspace** (required by massive overhauls like *Multiverse*) rely on deep native binary hooking, direct memory patching, and custom runtime code injection originally written for x86/x64 PC binaries. Porting this infrastructure to the ARM64 environment on the Switch requires substantial reverse engineering, custom memory management, and rewritten hooks. It is a work in progress, and we ask for your patience while we tackle this complexity.
@@ -261,6 +279,24 @@ El juego está optimizado para mandos tradicionales (Joy-Con / Mando Pro) y para
 ¡Los mods estándar de FTL 1.6 que modifican eventos, textos, naves, balance o recursos gráficos (XML/PNG) ya funcionan!
 - **Cómo utilizarlos:** El juego carga sus recursos desde `FTL.app/ftl.dat`. Puedes aplicar mods sencillos parcheando previamente `ftl.dat` en tu PC con **Slipstream Mod Manager (SMM)** o **ftlman**, y luego copiando el archivo resultante a tu MicroSD (`sdmc:/switch/ftl/FTL.app/ftl.dat`).
 - **Ejemplos de mods compatibles:** Mods de balance (*Twinge's Balance*), naves personalizadas, retoques gráficos (*HighRes Backgrounds*), nuevos eventos o armas que no requieran alterar la lógica interna del motor.
+
+Los siguientes mods de datos/recursos han sido probados y confirmados como funcionales:
+
+| Mod | Descripción |
+|---|---|
+| [Captain's Edition](https://subsetgames.com/forum/viewtopic.php?t=15663) | Overhaul clásico: eventos, sectores, naves y armas. Requiere su paquete de recursos primero |
+| [Stations Job](https://subsetgames.com/forum/viewtopic.php?t=24424) | Juega como una estación espacial |
+| [The RAD Fleet](https://subsetgames.com/forum/viewtopic.php?t=27381) | Reemplaza todas las naves del jugador |
+| [Twinge's Balance & Bugfix](https://subsetgames.com/forum/viewtopic.php?t=26269) | Rebalanceo del juego y corrección de bugs |
+| [Vicious Vessels](https://subsetgames.com/forum/viewtopic.php?t=32298) | 40 nuevas naves enemigas |
+| [Railguns, Photocasters & More!](https://subsetgames.com/forum/viewtopic.php?t=30294) | Nuevas armas y drones |
+| [The Athena](https://subsetgames.com/forum/viewtopic.php?p=121702) | Una nave que equipas a tu gusto desde el inicio |
+| [KRS Obsidian Cruiser](https://github.com/zedseven/ftl-obsidian-cruiser) | Nueva nave en lugar de la Engi B |
+| [HighRes Backgrounds and Planets](https://subsetgames.com/forum/viewtopic.php?t=30003) | Fondos y planetas en mayor resolución |
+| [Detailed Ship Greebles](https://subsetgames.com/forum/viewtopic.php?t=26931) | Cascos de naves con mayor nivel de detalle |
+| [FTL Event Tags](https://github.com/thrnz/FTLEventTags1.6) | Muestra hacia dónde conducen las opciones de cada evento |
+| [Better info](https://subsetgames.com/forum/viewtopic.php?t=38336) | Estadísticas y números exactos en las descripciones emergentes |
+| [Extended Pursuit Indicator](https://subsetgames.com/forum/viewtopic.php?t=26289) | Muestra el avance de la flota rebelde más allá en el mapa |
 
 #### Hyperspace y Grandes Overhauls (En Desarrollo)
 - **Estado:** En desarrollo activo.
