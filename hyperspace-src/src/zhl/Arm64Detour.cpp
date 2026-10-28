@@ -15,6 +15,7 @@
 #include <algorithm>
 #ifdef __SWITCH__
     #include <switch.h>
+    extern "C" void *memalign(size_t alignment, size_t size);
     #define PROT_READ 1
     #define PROT_WRITE 2
     #define PROT_EXEC 4
