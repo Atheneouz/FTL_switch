@@ -185,6 +185,13 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
                 ${HS_FOUND_LIB}
                 -Wl,--no-whole-archive
                 ${HS_EXTRA_LIBS}
+                -Wl,--start-group
+                ${CXX_LIBS}
+                -lstdc++
+                -lnx
+                -lm
+                -lz
+                -Wl,--end-group
             )
         else()
             message(STATUS "Hyperspace no encontrado en rutas predeterminadas (se puede compilar en hyperspace-src)")

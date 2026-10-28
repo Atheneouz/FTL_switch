@@ -3,6 +3,9 @@
 // Android the port shows it (see src/android/AndroidHost.cpp).
 
 #if defined(__ANDROID__) || defined(__SWITCH__)
+    #ifdef __cplusplus
+    extern "C"
+    #endif
     void PAL_HostShowError(const char *title, const char *message);
     inline void PAL_AndroidShowError(const char *title, const char *message) { PAL_HostShowError(title, message); }
     inline void PAL_ShowError(const char *title, const char *message)

@@ -45,11 +45,14 @@ static void HostLog(int level, const char *fmt, ...)
     }
 }
 
-void PAL_HostShowError(const char *title, const char *message)
+extern "C" void PAL_HostShowError(const char *title, const char *message)
 {
     HostLog(2, "Hyperspace: %s: %s", title, message);
     g_lastError = std::string(title) + ": " + message;
 }
+
+// Alias con mangling C++ para resolver llamadas de zhl.cpp
+extern "C" void _Z17PAL_HostShowErrorPKcS0_(const char *title, const char *message) __attribute__((alias("PAL_HostShowError")));
 
 std::string HS_LogPath(const char *name)
 {
