@@ -60,11 +60,11 @@ set(CMAKE_C_COMPILER_EXTERNAL_TOOLCHAIN "${DEVKITARM64}" CACHE PATH "")
 set(CMAKE_CXX_COMPILER_EXTERNAL_TOOLCHAIN "${DEVKITARM64}" CACHE PATH "")
 
 # Flags de arquitectura Switch y target para Clang
-set(_switch_arch_flags "-march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIC")
+set(_switch_arch_flags "-march=armv8-a+crc+crypto -mtune=cortex-a57 -fPIC")
 set(_switch_sysroot_flags "-isystem ${DEVKITPRO}/libnx/include -isystem ${DEVKITPRO}/portlibs/switch/include")
 
 # Flags C y C++ comunes
-set(_ftl_common_flags "--target=aarch64-none-elf --sysroot=${DEVKITARM64}/aarch64-none-elf --gcc-toolchain=${DEVKITARM64} -fsigned-char -fPIC -D__SWITCH__=1 ${_switch_arch_flags} ${_switch_sysroot_flags}")
+set(_ftl_common_flags "-fsigned-char -fPIC -D__SWITCH__=1 ${_switch_arch_flags} ${_switch_sysroot_flags}")
 
 # Flags específicas de C++ (Apple ABI + libc++ de FTL)
 set(_ftl_cxx_only_flags "-nostdinc++ -isystem ${_ftl_libcxx}/include/c++/v1 -fc++-abi=arm -D_LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION=3 -D_LIBCPP_DARWIN_CTYPE_ABI")
