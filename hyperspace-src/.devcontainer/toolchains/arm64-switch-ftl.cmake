@@ -34,69 +34,62 @@ elseif(NOT DEFINED FTL_LIBCXX)
 endif()
 set(_ftl_libcxx "${FTL_LIBCXX}")
 
-# Usamos Clang para compatibilidad con Apple ARM64 ABI (-fc++-abi=arm) y libc++
+# Usamos Clang-19 para compatibilidad con Apple ARM64 ABI (-fc++-abi=arm) y libc++
 if(EXISTS "/usr/bin/clang-19")
     set(CMAKE_C_COMPILER "/usr/bin/clang-19" CACHE FILEPATH "C Compiler")
     set(CMAKE_CXX_COMPILER "/usr/bin/clang++-19" CACHE FILEPATH "CXX Compiler")
+    set(CMAKE_ASM_COMPILER "/usr/bin/clang-19" CACHE FILEPATH "ASM Compiler")
 else()
     find_program(CLANG_C_BIN NAMES clang-19 clang)
     find_program(CLANG_CXX_BIN NAMES clang++-19 clang++)
     set(CMAKE_C_COMPILER "${CLANG_C_BIN}" CACHE FILEPATH "C Compiler")
     set(CMAKE_CXX_COMPILER "${CLANG_CXX_BIN}" CACHE FILEPATH "CXX Compiler")
+    set(CMAKE_ASM_COMPILER "${CLANG_C_BIN}" CACHE FILEPATH "ASM Compiler")
 endif()
 
 set(CMAKE_AR "${DEVKITARM64}/bin/aarch64-none-elf-ar" CACHE FILEPATH "Archiver")
 set(CMAKE_RANLIB "${DEVKITARM64}/bin/aarch64-none-elf-ranlib" CACHE FILEPATH "Ranlib")
 
+# Variables estándar de CMake para Clang cross-compilation
+set(CMAKE_C_COMPILER_TARGET "aarch64-none-elf" CACHE STRING "")
+set(CMAKE_CXX_COMPILER_TARGET "aarch64-none-elf" CACHE STRING "")
+set(CMAKE_ASM_COMPILER_TARGET "aarch64-none-elf" CACHE STRING "")
+
+set(CMAKE_SYSROOT "${DEVKITARM64}/aarch64-none-elf" CACHE PATH "")
+set(CMAKE_C_COMPILER_EXTERNAL_TOOLCHAIN "${DEVKITARM64}" CACHE PATH "")
+set(CMAKE_CXX_COMPILER_EXTERNAL_TOOLCHAIN "${DEVKITARM64}" CACHE PATH "")
+
 # Flags de arquitectura Switch y target para Clang
-set(_switch_target_flags "--target=aarch64-none-elf --sysroot=${DEVKITARM64}/aarch64-none-elf --gcc-toolchain=${DEVKITARM64}")
 set(_switch_arch_flags "-march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIC")
+set(_switch_sysroot_flags "-isystem ${DEVKITPRO}/libnx/include -isystem ${DEVKITPRO}/portlibs/switch/include")
 
-# Donde están las cabeceras de libnx y portlibs
-set(_switch_sysroot_flags
-    "-isystem ${DEVKITPRO}/libnx/include -isystem ${DEVKITPRO}/portlibs/switch/include")
+# Flags C y C++ comunes
+set(_ftl_common_flags "--target=aarch64-none-elf --sysroot=${DEVKITARM64}/aarch64-none-elf --gcc-toolchain=${DEVKITARM64} -fsigned-char -fPIC -D__SWITCH__=1 ${_switch_arch_flags} ${_switch_sysroot_flags}")
 
-# Donde Apple's arm64 ABI difiere de la estándar y la diferencia cruza al juego:
-# char es signed; constructores devuelven `this` con cookie ARM (-fc++-abi=arm)
-string(CONCAT _ftl_c_flags
-    " ${_switch_target_flags}"
-    " -fsigned-char"
-    " -fPIC"
-    " -D__SWITCH__=1"
-    " ${_switch_arch_flags}"
-    " ${_switch_sysroot_flags}"
-)
-string(CONCAT _ftl_cxx_flags
-    " ${_switch_target_flags}"
-    " -nostdinc++ -isystem ${_ftl_libcxx}/include/c++/v1"
-    " -fc++-abi=arm"
-    " -D_LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION=3"
-    " -D_LIBCPP_DARWIN_CTYPE_ABI"
-)
+# Flags específicas de C++ (Apple ABI + libc++ de FTL)
+set(_ftl_cxx_only_flags "-nostdinc++ -isystem ${_ftl_libcxx}/include/c++/v1 -fc++-abi=arm -D_LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION=3 -D_LIBCPP_DARWIN_CTYPE_ABI")
+
+set(CMAKE_C_FLAGS_INIT "${_ftl_common_flags}")
+set(CMAKE_CXX_FLAGS_INIT "${_ftl_common_flags} ${_ftl_cxx_only_flags}")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS_INIT}" CACHE STRING "C Flags" FORCE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_INIT}" CACHE STRING "CXX Flags" FORCE)
 
 foreach(lang C CXX)
     set(CMAKE_${lang}_FLAGS_DEBUG_INIT "-DDEBUG -g")
     set(CMAKE_${lang}_FLAGS_RELEASE_INIT "-DNDEBUG -O2")
     set(CMAKE_${lang}_FLAGS_MINSIZEREL_INIT "-DNDEBUG -Os")
     set(CMAKE_${lang}_FLAGS_RELWITHDEBINFO_INIT "-DNDEBUG -O2 -g")
-    string(APPEND CMAKE_${lang}_FLAGS "${_ftl_c_flags}")
-endforeach()
-string(APPEND CMAKE_CXX_FLAGS "${_ftl_cxx_flags}")
-
-# Linkamos con la libc++ del port en lugar de la estándar
-foreach(kind EXE SHARED MODULE STATIC)
-    string(APPEND CMAKE_${kind}_LINKER_FLAGS
-        " -L${DEVKITPRO}/libnx/lib -L${DEVKITPRO}/portlibs/switch/lib")
 endforeach()
 
-# Búsqueda de paquetes solo dentro de sysroot/portlibs
+# Rutas de búsqueda de librerías y cabeceras
 list(APPEND CMAKE_PREFIX_PATH
     "${DEVKITPRO}/portlibs/switch"
-    "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}")
+    "${DEVKITPRO}/libnx")
 list(APPEND CMAKE_FIND_ROOT_PATH
     "${DEVKITPRO}/portlibs/switch"
-    "${DEVKITPRO}/libnx"
-    "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}")
+    "${DEVKITPRO}/libnx")
+
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)

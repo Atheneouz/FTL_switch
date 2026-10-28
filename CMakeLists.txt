@@ -160,8 +160,22 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
                 endforeach()
             endif()
 
+            set(HS_EXTRA_LIBS "")
+            set(LUA_SWITCH_CANDIDATES
+                "${CMAKE_CURRENT_SOURCE_DIR}/hyperspace-src/build-switch-release/liblua_switch.a"
+                "${CMAKE_CURRENT_SOURCE_DIR}/hyperspace-src/build-switch-debug/liblua_switch.a"
+                "${CMAKE_CURRENT_SOURCE_DIR}/hyperspace-src/build-switch-release/liblua.a"
+            )
+            foreach(cand ${LUA_SWITCH_CANDIDATES})
+                if(EXISTS "${cand}")
+                    set(HS_EXTRA_LIBS "${cand}")
+                    message(STATUS "Librería Lua de Hyperspace detectada: ${cand}")
+                    break()
+                endif()
+            endforeach()
+
             if(HYPERSPACE_VCPKG_DIR AND EXISTS "${HYPERSPACE_VCPKG_DIR}")
-                message(STATUS "Dependencias vcpkg de Hyperspace: ${HYPERSPACE_VCPKG_DIR}")
+                message(STATUS "Dependencias de Hyperspace: ${HYPERSPACE_VCPKG_DIR}")
                 target_include_directories(ftl PRIVATE "${HYPERSPACE_VCPKG_DIR}/include")
                 target_link_directories(ftl PRIVATE "${HYPERSPACE_VCPKG_DIR}/lib")
             endif()
@@ -170,10 +184,7 @@ if(DEFINED SWITCH OR CMAKE_SYSTEM_NAME STREQUAL "Switch" OR DEFINED ENV{DEVKITPR
                 -Wl,--whole-archive
                 ${HS_FOUND_LIB}
                 -Wl,--no-whole-archive
-                -lminizip
-                -llua
-                -lboost_filesystem
-                -lboost_system
+                ${HS_EXTRA_LIBS}
             )
         else()
             message(STATUS "Hyperspace no encontrado en rutas predeterminadas (se puede compilar en hyperspace-src)")

@@ -17,15 +17,45 @@ if(APPLE)
     set(BUILD_SHARED_LIBS OFF)
 endif()
 
-# Let vcpkg handle Boost automatically
-find_package(Boost REQUIRED COMPONENTS filesystem system)
+if(NINTENDO_SWITCH)
+    # Nintendo Switch: resolvemos dependencias de forma directa sin vcpkg
+    find_package(Boost REQUIRED)
+    if(NOT TARGET Boost::filesystem)
+        add_library(Boost::filesystem INTERFACE IMPORTED)
+        target_include_directories(Boost::filesystem INTERFACE ${Boost_INCLUDE_DIRS})
+    endif()
 
-# Let vcpkg handle Lua automatically
-find_package(Lua REQUIRED)
+    find_package(ZLIB REQUIRED)
 
-# Let vcpkg handle minizip automatically
-find_package(minizip REQUIRED)
-find_package(ZLIB REQUIRED)
+    # minizip no se utiliza en Switch (módulo crash-detection excluido)
+    if(NOT TARGET minizip::minizip)
+        add_library(minizip::minizip INTERFACE IMPORTED)
+    endif()
+
+    # Compilamos Lua 5.3 para Switch con la misma arquitectura y ABI
+    set(LUA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/lua-5.3.6/src")
+    if(EXISTS "${LUA_DIR}")
+        file(GLOB LUA_CORE_SRCS "${LUA_DIR}/*.c")
+        list(FILTER LUA_CORE_SRCS EXCLUDE REGEX "(/lua\\.c$|/luac\\.c$|/linit\\.c$)")
+        add_library(lua_switch STATIC ${LUA_CORE_SRCS})
+        target_include_directories(lua_switch PUBLIC "${LUA_DIR}")
+        target_compile_options(lua_switch PRIVATE -fsigned-char -fPIC -O2)
+        set(LUA_LIBRARIES lua_switch)
+        set(LUA_INCLUDE_DIR "${LUA_DIR}")
+    else()
+        find_package(Lua REQUIRED)
+    endif()
+else()
+    # Let vcpkg handle Boost automatically
+    find_package(Boost REQUIRED COMPONENTS filesystem system)
+
+    # Let vcpkg handle Lua automatically
+    find_package(Lua REQUIRED)
+
+    # Let vcpkg handle minizip automatically
+    find_package(minizip REQUIRED)
+    find_package(ZLIB REQUIRED)
+endif()
 
 # SDL3: ni el iPad game en Android ni en Switch usan SDL
 if(NOT ANDROID AND NOT NINTENDO_SWITCH)
@@ -185,6 +215,7 @@ endif()
 file(GLOB LUA_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/lua/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/lua/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/lua/*.c"
 )
 
 # Enable testing - controlled by ENABLE_TESTING option

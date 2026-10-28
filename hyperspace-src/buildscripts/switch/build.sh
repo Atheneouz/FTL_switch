@@ -11,7 +11,6 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 REPO_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)
 BUILD_TYPE="${1:-Release}"
 BUILD_DIR="$REPO_ROOT/build-switch-$(echo "$BUILD_TYPE" | tr '[:upper:]' '[:lower:]')"
-VCPKG_ROOT="$REPO_ROOT/vcpkg"
 
 : "${DEVKITPRO:?set DEVKITPRO to the devkitPro installation (e.g. /opt/devkitpro)}"
 : "${FTL_LIBCXX:?set FTL_LIBCXX to the libc++ build of the Switch port (see README.md)}"
@@ -29,12 +28,13 @@ done
 NINJA_BIN=$(which ninja 2>/dev/null || which ninja-build 2>/dev/null || echo "ninja")
 
 cd "$REPO_ROOT"
-cmake -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
-    -DVCPKG_TARGET_TRIPLET=arm64-switch-ftl \
-    -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/toolchains/arm64-switch-ftl.cmake" \
+echo "Configurando CMake con Ninja para Nintendo Switch..."
+cmake -DCMAKE_TOOLCHAIN_FILE="$REPO_ROOT/.devcontainer/toolchains/arm64-switch-ftl.cmake" \
     -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
     -DCMAKE_MAKE_PROGRAM="$NINJA_BIN" \
     -DNINTENDO_SWITCH=ON \
     -S . -B "$BUILD_DIR" -G Ninja
+
+echo "Compilando Hyperspace con $NINJA_BIN..."
 "$NINJA_BIN" -C "$BUILD_DIR"
 echo "Built: $BUILD_DIR/libHyperspace.a"

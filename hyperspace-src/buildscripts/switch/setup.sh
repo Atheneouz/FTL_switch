@@ -1,11 +1,11 @@
 #!/bin/bash
 # Preparación del entorno para compilar Hyperspace para Nintendo Switch.
-# Instala vcpkg, copia el toolchain y el triplet de Switch.
+# Descarga e instala Lua 5.3 y verifica el entorno de compilación.
 #
 # Requisitos previos:
 #   - devkitPro con devkitA64 y libnx instalados
 #   - cmake, ninja-build
-#   - swig, lua5.3+ con lpeg y lfs (para pre-generar, ver pre-generate.sh)
+#   - swig, lua5.3 con lpeg y lfs
 #   - FTL_LIBCXX: la compilación de libc++ del port Switch
 #
 # Uso: buildscripts/switch/setup.sh
@@ -29,28 +29,21 @@ if [ ! -d "$DEVKITPRO/devkitA64" ]; then
     exit 1
 fi
 
-echo "[1/3] devkitPro encontrado en $DEVKITPRO"
+echo "[1/2] devkitPro encontrado en $DEVKITPRO"
 
-# 2. Clonamos vcpkg si no existe
-if [ ! -d "$REPO_ROOT/vcpkg" ]; then
-    echo "[2/3] Clonando vcpkg ..."
-    git clone https://github.com/microsoft/vcpkg.git "$REPO_ROOT/vcpkg"
+# 2. Descargamos las fuentes de Lua 5.3.6 si no están presentes
+echo "[2/2] Verificando fuentes de Lua 5.3 para Switch..."
+mkdir -p "$REPO_ROOT/third_party"
+if [ ! -d "$REPO_ROOT/third_party/lua-5.3.6" ]; then
+    echo "  Descargando Lua 5.3.6..."
+    curl -sL https://www.lua.org/ftp/lua-5.3.6.tar.gz | tar -xz -C "$REPO_ROOT/third_party"
+    echo "  -> Lua 5.3.6 preparado en third_party/lua-5.3.6"
 else
-    echo "[2/3] vcpkg ya existe"
+    echo "  -> Lua 5.3.6 ya está disponible en third_party/lua-5.3.6"
 fi
-(cd "$REPO_ROOT/vcpkg" && ./bootstrap-vcpkg.sh -disableMetrics)
-
-# 3. Copiamos el toolchain y el triplet de Switch a vcpkg
-echo "[3/3] Instalando toolchain y triplet de Switch en vcpkg ..."
-mkdir -p "$REPO_ROOT/vcpkg/scripts/toolchains"
-mkdir -p "$REPO_ROOT/vcpkg/triplets"
-cp -f "$REPO_ROOT/.devcontainer/toolchains/arm64-switch-ftl.cmake" \
-   "$REPO_ROOT/vcpkg/scripts/toolchains/"
-cp -f "$REPO_ROOT/.devcontainer/triplets/arm64-switch-ftl.cmake" \
-   "$REPO_ROOT/vcpkg/triplets/"
 
 echo ""
-echo "=== Setup completado ==="
+echo "=== Setup completado con éxito ==="
 echo "Próximos pasos:"
 echo "  1. Pre-genera los archivos: buildscripts/switch/pre-generate.sh"
 echo "  2. Compila: FTL_LIBCXX=<ruta> buildscripts/switch/build.sh [Release|Debug]"
