@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(Hyperspace CXX)
+project(Hyperspace C CXX)
 
 # Nintendo Switch: compilamos como librería estática enlazada en ftl.nro
 option(NINTENDO_SWITCH "Build Hyperspace as a static library for Nintendo Switch" OFF)
