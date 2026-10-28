@@ -20,8 +20,8 @@ echo "=== Pre-generación de fuentes para Hyperspace (Switch) ==="
 # (solo necesitamos iOSARM64, pero el script genera todas a la vez)
 echo "[1/3] Generando definiciones ZHL (FTLGame*.h / FTLGame*.cpp) ..."
 cd "$REPO_ROOT"
-export LUA_PATH="/usr/local/share/lua/5.3/?.lua;/usr/local/share/lua/5.3/?/init.lua;./?.lua;$LUA_PATH;;"
-export LUA_CPATH="/usr/local/lib/lua/5.3/?.so;./?.so;$LUA_CPATH;;"
+export LUA_PATH="/usr/share/lua/5.3/?.lua;/usr/share/lua/5.3/?/init.lua;/usr/local/share/lua/5.3/?.lua;/usr/local/share/lua/5.3/?/init.lua;./?.lua;$LUA_PATH;;"
+export LUA_CPATH="/usr/lib/x86_64-linux-gnu/lua/5.3/?.so;/usr/lib/lua/5.3/?.so;/usr/local/lib/lua/5.3/?.so;./?.so;$LUA_CPATH;;"
 LUA="${LUA:-lua}" bash libzhlgen/parsefuncs.sh
 echo "      -> generated/FTLGameiOSARM64.{h,cpp} listo"
 
