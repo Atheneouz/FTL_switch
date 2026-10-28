@@ -433,12 +433,12 @@ void CustomEventsParser::ParseCustomCredits(rapidxml::xml_node<char> *node)
     // Parse contents in credit.txt
     CreditFile creditFile;
     char* creditsTextFile = G_->GetResources()->LoadFile("data/credits.txt");
-    std::stringstream ss(creditsTextFile);
+    std::string creditsStr = creditsTextFile ? creditsTextFile : "";
     delete [] creditsTextFile;
+    int totalLines = std::count(creditsStr.begin(), creditsStr.end(), '\n');
+    std::stringstream ss(creditsStr);
     std::string line;
     int lineCount = 0;
-    int totalLines = std::count(std::istreambuf_iterator<char>(ss), std::istreambuf_iterator<char>(), '\n');
-    ss.seekg(0);
     int remainder = totalLines % 3;
     int additionalEntries = (remainder == 0) ? 0 : 3 - remainder;
 
