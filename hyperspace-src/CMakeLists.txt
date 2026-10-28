@@ -18,14 +18,36 @@ if(APPLE)
 endif()
 
 if(NINTENDO_SWITCH)
-    # Nintendo Switch: resolvemos dependencias de forma directa sin vcpkg
-    find_package(Boost REQUIRED)
+    # Nintendo Switch: resolvemos dependencias de forma directa sin módulos problemáticos
+    find_path(Boost_INCLUDE_DIRS
+        NAMES boost/version.hpp
+        PATHS /usr/include /usr/local/include "${DEVKITPRO}/portlibs/switch/include"
+        NO_CMAKE_FIND_ROOT_PATH
+    )
+    if(NOT Boost_INCLUDE_DIRS)
+        message(FATAL_ERROR "No se encontraron las cabeceras de Boost (instala libboost-dev)")
+    endif()
+
+    if(NOT TARGET Boost::boost)
+        add_library(Boost::boost INTERFACE IMPORTED)
+        target_include_directories(Boost::boost INTERFACE ${Boost_INCLUDE_DIRS})
+    endif()
     if(NOT TARGET Boost::filesystem)
         add_library(Boost::filesystem INTERFACE IMPORTED)
         target_include_directories(Boost::filesystem INTERFACE ${Boost_INCLUDE_DIRS})
     endif()
 
-    find_package(ZLIB REQUIRED)
+    if(NOT TARGET ZLIB::ZLIB)
+        if(EXISTS "${DEVKITPRO}/portlibs/switch/lib/libz.a")
+            add_library(ZLIB::ZLIB UNKNOWN IMPORTED)
+            set_target_properties(ZLIB::ZLIB PROPERTIES
+                IMPORTED_LOCATION "${DEVKITPRO}/portlibs/switch/lib/libz.a"
+                INTERFACE_INCLUDE_DIRECTORIES "${DEVKITPRO}/portlibs/switch/include"
+            )
+        else()
+            find_package(ZLIB REQUIRED)
+        endif()
+    endif()
 
     # minizip no se utiliza en Switch (módulo crash-detection excluido)
     if(NOT TARGET minizip::minizip)
