@@ -114,6 +114,12 @@ jobs:
           bash buildscripts/switch/build.sh "$BUILD_TYPE"
           cd ..
 
+      - name: Imprimir logs de depuración si falla Hyperspace
+        if: failure()
+        run: |
+          echo "=== Logs de vcpkg detect_compiler y buildtrees ==="
+          find hyperspace-src -name "*.log" -exec echo "--- LOG: {} ---" \; -exec cat {} \; || true
+
       - name: Configurar CMake y compilar ftl.nro con Hyperspace
         run: |
           BUILD_TYPE="${{ github.event.inputs.build_type || 'Release' }}"

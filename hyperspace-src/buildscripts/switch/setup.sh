@@ -42,9 +42,11 @@ fi
 
 # 3. Copiamos el toolchain y el triplet de Switch a vcpkg
 echo "[3/3] Instalando toolchain y triplet de Switch en vcpkg ..."
-cp "$REPO_ROOT/.devcontainer/toolchains/arm64-switch-ftl.cmake" \
+mkdir -p "$REPO_ROOT/vcpkg/scripts/toolchains"
+mkdir -p "$REPO_ROOT/vcpkg/triplets"
+cp -f "$REPO_ROOT/.devcontainer/toolchains/arm64-switch-ftl.cmake" \
    "$REPO_ROOT/vcpkg/scripts/toolchains/"
-cp "$REPO_ROOT/.devcontainer/triplets/arm64-switch-ftl.cmake" \
+cp -f "$REPO_ROOT/.devcontainer/triplets/arm64-switch-ftl.cmake" \
    "$REPO_ROOT/vcpkg/triplets/"
 
 echo ""

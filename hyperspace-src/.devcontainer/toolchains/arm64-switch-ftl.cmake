@@ -34,26 +34,32 @@ elseif(NOT DEFINED FTL_LIBCXX)
 endif()
 set(_ftl_libcxx "${FTL_LIBCXX}")
 
-set(CMAKE_C_COMPILER "${DEVKITARM64}/bin/aarch64-none-elf-gcc" CACHE FILEPATH "C Compiler")
-set(CMAKE_CXX_COMPILER "${DEVKITARM64}/bin/aarch64-none-elf-g++" CACHE FILEPATH "CXX Compiler")
+# Usamos Clang para compatibilidad con Apple ARM64 ABI (-fc++-abi=arm) y libc++
+if(EXISTS "/usr/bin/clang-19")
+    set(CMAKE_C_COMPILER "/usr/bin/clang-19" CACHE FILEPATH "C Compiler")
+    set(CMAKE_CXX_COMPILER "/usr/bin/clang++-19" CACHE FILEPATH "CXX Compiler")
+else()
+    find_program(CLANG_C_BIN NAMES clang-19 clang)
+    find_program(CLANG_CXX_BIN NAMES clang++-19 clang++)
+    set(CMAKE_C_COMPILER "${CLANG_C_BIN}" CACHE FILEPATH "C Compiler")
+    set(CMAKE_CXX_COMPILER "${CLANG_CXX_BIN}" CACHE FILEPATH "CXX Compiler")
+endif()
+
 set(CMAKE_AR "${DEVKITARM64}/bin/aarch64-none-elf-ar" CACHE FILEPATH "Archiver")
 set(CMAKE_RANLIB "${DEVKITARM64}/bin/aarch64-none-elf-ranlib" CACHE FILEPATH "Ranlib")
 
-# Flags de arquitectura Switch (Cortex-A57, ARMv8-A)
+# Flags de arquitectura Switch y target para Clang
+set(_switch_target_flags "--target=aarch64-none-elf --sysroot=${DEVKITARM64}/aarch64-none-elf --gcc-toolchain=${DEVKITARM64}")
 set(_switch_arch_flags "-march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIC")
 
 # Donde están las cabeceras de libnx y portlibs
 set(_switch_sysroot_flags
     "-isystem ${DEVKITPRO}/libnx/include -isystem ${DEVKITPRO}/portlibs/switch/include")
 
-set(FTL_LIBCXX "$ENV{FTL_LIBCXX}" CACHE PATH "The Switch port's libc++ build (include/ and lib/)")
-set(_ftl_libcxx "${FTL_LIBCXX}")
-
 # Donde Apple's arm64 ABI difiere de la estándar y la diferencia cruza al juego:
-# char es signed; constructores devuelven `this` con cookie ARM
-# (-fc++-abi=arm, como el libc++ del port está compilado);
-# RTTI y tablas ctype usan la disposición de Apple.
+# char es signed; constructores devuelven `this` con cookie ARM (-fc++-abi=arm)
 string(CONCAT _ftl_c_flags
+    " ${_switch_target_flags}"
     " -fsigned-char"
     " -fPIC"
     " -D__SWITCH__=1"
@@ -61,6 +67,7 @@ string(CONCAT _ftl_c_flags
     " ${_switch_sysroot_flags}"
 )
 string(CONCAT _ftl_cxx_flags
+    " ${_switch_target_flags}"
     " -nostdinc++ -isystem ${_ftl_libcxx}/include/c++/v1"
     " -fc++-abi=arm"
     " -D_LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION=3"
