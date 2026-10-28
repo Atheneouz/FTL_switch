@@ -26,12 +26,15 @@ for f in generated/FTLGameiOSARM64.h generated/FTLGameiOSARM64.cpp \
     fi
 done
 
+NINJA_BIN=$(which ninja 2>/dev/null || which ninja-build 2>/dev/null || echo "ninja")
+
 cd "$REPO_ROOT"
 cmake -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
     -DVCPKG_TARGET_TRIPLET=arm64-switch-ftl \
     -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/toolchains/arm64-switch-ftl.cmake" \
     -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
+    -DCMAKE_MAKE_PROGRAM="$NINJA_BIN" \
     -DNINTENDO_SWITCH=ON \
     -S . -B "$BUILD_DIR" -G Ninja
-ninja -C "$BUILD_DIR"
+"$NINJA_BIN" -C "$BUILD_DIR"
 echo "Built: $BUILD_DIR/libHyperspace.a"

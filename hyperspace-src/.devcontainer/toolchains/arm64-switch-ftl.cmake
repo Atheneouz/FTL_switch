@@ -10,25 +10,32 @@ set(_FTL_TOOLCHAIN 1)
 # DEVKITARM64: raíz de devkitA64 (normalmente $DEVKITPRO/devkitA64)
 # FTL_LIBCXX:  salida de libcxx/build.sh switch (include/ y lib/)
 
-foreach(var DEVKITPRO FTL_LIBCXX)
-    if(NOT DEFINED ENV{${var}})
-        message(FATAL_ERROR "${var} is not set (see buildscripts/switch/README.md)")
-    endif()
-endforeach()
+# Compilador cruzado de devkitA64 y sistema destino
+set(CMAKE_SYSTEM_NAME "Generic" CACHE STRING "")
+set(CMAKE_SYSTEM_PROCESSOR "aarch64" CACHE STRING "")
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY CACHE STRING "")
 
-set(DEVKITPRO "$ENV{DEVKITPRO}")
+if(DEFINED ENV{DEVKITPRO})
+    set(DEVKITPRO "$ENV{DEVKITPRO}")
+else()
+    set(DEVKITPRO "/opt/devkitpro")
+endif()
+
 if(DEFINED ENV{DEVKITARM64})
     set(DEVKITARM64 "$ENV{DEVKITARM64}")
 else()
     set(DEVKITARM64 "${DEVKITPRO}/devkitA64")
 endif()
 
-# Compilador cruzado de devkitA64
-set(CMAKE_SYSTEM_NAME "Generic")
-set(CMAKE_SYSTEM_PROCESSOR "aarch64")
+if(DEFINED ENV{FTL_LIBCXX})
+    set(FTL_LIBCXX "$ENV{FTL_LIBCXX}" CACHE PATH "The Switch port's libc++ build (include/ and lib/)")
+elseif(NOT DEFINED FTL_LIBCXX)
+    set(FTL_LIBCXX "/tmp/libcxx-out" CACHE PATH "The Switch port's libc++ build (include/ and lib/)")
+endif()
+set(_ftl_libcxx "${FTL_LIBCXX}")
 
-set(CMAKE_C_COMPILER "${DEVKITARM64}/bin/aarch64-none-elf-gcc")
-set(CMAKE_CXX_COMPILER "${DEVKITARM64}/bin/aarch64-none-elf-g++")
+set(CMAKE_C_COMPILER "${DEVKITARM64}/bin/aarch64-none-elf-gcc" CACHE FILEPATH "C Compiler")
+set(CMAKE_CXX_COMPILER "${DEVKITARM64}/bin/aarch64-none-elf-g++" CACHE FILEPATH "CXX Compiler")
 set(CMAKE_AR "${DEVKITARM64}/bin/aarch64-none-elf-ar" CACHE FILEPATH "Archiver")
 set(CMAKE_RANLIB "${DEVKITARM64}/bin/aarch64-none-elf-ranlib" CACHE FILEPATH "Ranlib")
 
