@@ -3,8 +3,8 @@
 
 #ifdef _WIN32
     #include "FTLGameWin32.h"
-#elif defined(__ANDROID__)
-    #include "FTLGameiOSARM64.h"  // FTL for iPad 1.6.21, run by the Android port
+#elif defined(__ANDROID__) || defined(__SWITCH__)
+    #include "FTLGameiOSARM64.h"  // FTL for iPad 1.6.21, ejecutado en Android y Nintendo Switch
 #elif defined(__linux__)
     #ifdef __i386__
         #include "FTLGameELF32.h"

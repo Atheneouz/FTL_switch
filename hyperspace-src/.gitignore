@@ -76,3 +76,7 @@ ftl-bin/
 
 # Build-generated sources (FTLGame*, Version.autogen.hpp, swigluarun.h)
 /generated
+
+# Third-party downloaded/isolated libraries for Switch
+third_party/boost/
+third_party/lua-*/

@@ -25,6 +25,12 @@ for f in generated/FTLGameiOSARM64.h generated/FTLGameiOSARM64.cpp \
     fi
 done
 
+# Nos aseguramos de que las cabeceras de Boost estén aisladas en third_party/boost
+if [ ! -f "$REPO_ROOT/third_party/boost/boost/version.hpp" ] && [ -d "/usr/include/boost" ]; then
+    mkdir -p "$REPO_ROOT/third_party/boost"
+    cp -a /usr/include/boost "$REPO_ROOT/third_party/boost/"
+fi
+
 NINJA_BIN=$(which ninja 2>/dev/null || which ninja-build 2>/dev/null || echo "ninja")
 
 cd "$REPO_ROOT"

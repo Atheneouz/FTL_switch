@@ -18,23 +18,26 @@ if(APPLE)
 endif()
 
 if(NINTENDO_SWITCH)
-    # Nintendo Switch: resolvemos dependencias de forma directa sin módulos problemáticos
-    find_path(Boost_INCLUDE_DIRS
-        NAMES boost/version.hpp
-        PATHS /usr/include /usr/local/include "${DEVKITPRO}/portlibs/switch/include"
-        NO_CMAKE_FIND_ROOT_PATH
-    )
-    if(NOT Boost_INCLUDE_DIRS)
-        message(FATAL_ERROR "No se encontraron las cabeceras de Boost (instala libboost-dev)")
+    # Nintendo Switch: resolvemos dependencias de forma directa sin módulos problemáticos.
+    # Aislamos las cabeceras de Boost en third_party/boost para evitar polucionar el entorno
+    # con cabeceras glibc x86_64 del host (/usr/include/bits/libc-header-start.h).
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/boost/boost/version.hpp")
+        set(Boost_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/boost")
+    elseif(EXISTS "${DEVKITPRO}/portlibs/switch/include/boost/version.hpp")
+        set(Boost_INCLUDE_DIRS "${DEVKITPRO}/portlibs/switch/include")
+    elseif(EXISTS "/usr/include/boost/version.hpp")
+        set(Boost_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/boost")
+    else()
+        message(FATAL_ERROR "No se encontraron las cabeceras de Boost (ejecuta buildscripts/switch/setup.sh)")
     endif()
 
     if(NOT TARGET Boost::boost)
         add_library(Boost::boost INTERFACE IMPORTED)
-        target_include_directories(Boost::boost INTERFACE ${Boost_INCLUDE_DIRS})
+        target_include_directories(Boost::boost INTERFACE "${Boost_INCLUDE_DIRS}")
     endif()
     if(NOT TARGET Boost::filesystem)
         add_library(Boost::filesystem INTERFACE IMPORTED)
-        target_include_directories(Boost::filesystem INTERFACE ${Boost_INCLUDE_DIRS})
+        target_include_directories(Boost::filesystem INTERFACE "${Boost_INCLUDE_DIRS}")
     endif()
 
     if(NOT TARGET ZLIB::ZLIB)
