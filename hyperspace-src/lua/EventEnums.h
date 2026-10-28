@@ -2,29 +2,49 @@
 #define EVENTENUMS_H
 //NOTE: This approach has a limit of 256 enum values.
 #ifndef SWIG
-    #ifndef BOOST_PP_LIMIT_MAG
-        #define BOOST_PP_LIMIT_MAG 256
-    #endif
-    #ifndef BOOST_PP_LIMIT_VARIADIC
-        #define BOOST_PP_LIMIT_VARIADIC 256
-    #endif
-    #ifndef BOOST_PP_LIMIT_TUPLE
-        #define BOOST_PP_LIMIT_TUPLE 256
-    #endif
-    #ifndef BOOST_PP_LIMIT_SEQ
-        #define BOOST_PP_LIMIT_SEQ 256
-    #endif
-    #include <boost/preprocessor/seq/for_each.hpp>
-    #include <boost/preprocessor/stringize.hpp>
-    #include <boost/preprocessor/variadic/to_seq.hpp>
-    #define STRINGIZE_FOR_EACH(_, __, arg) BOOST_PP_STRINGIZE(arg) ,
+    #include <string>
+    #include <vector>
+
     #define NAMED_ENUM(enumName, ...) \
     enum enumName { \
         __VA_ARGS__ \
     }; \
     static const char* GetName(enumName e) { \
-        static const char* names[] = {BOOST_PP_SEQ_FOR_EACH(STRINGIZE_FOR_EACH, ~, BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__))}; \
-        return names[e]; \
+        static std::vector<std::string> names; \
+        static bool init = false; \
+        if (!init) { \
+            init = true; \
+            std::string s = #__VA_ARGS__; \
+            size_t start = 0; \
+            while (start < s.size()) { \
+                size_t end = s.find(',', start); \
+                if (end == std::string::npos) end = s.size(); \
+                std::string item = s.substr(start, end - start); \
+                size_t lineStart = 0; \
+                while (lineStart < item.size()) { \
+                    size_t lineEnd = item.find('\n', lineStart); \
+                    if (lineEnd == std::string::npos) lineEnd = item.size(); \
+                    std::string line = item.substr(lineStart, lineEnd - lineStart); \
+                    size_t p1 = line.find_first_not_of(" \t\r"); \
+                    size_t p2 = line.find_last_not_of(" \t\r"); \
+                    if (p1 != std::string::npos && p2 != std::string::npos) { \
+                        std::string token = line.substr(p1, p2 - p1 + 1); \
+                        if (token.substr(0, 2) != "//") { \
+                            size_t eq = token.find('='); \
+                            if (eq != std::string::npos) token = token.substr(0, eq); \
+                            size_t tp = token.find_last_not_of(" \t\r"); \
+                            if (tp != std::string::npos) token = token.substr(0, tp + 1); \
+                            names.push_back(token); \
+                            break; \
+                        } \
+                    } \
+                    lineStart = lineEnd + 1; \
+                } \
+                start = end + 1; \
+            } \
+        } \
+        if ((size_t)e < names.size()) return names[(size_t)e].c_str(); \
+        return ""; \
     };
 #else //#ifdef SWIG
     %define NAMED_ENUM(enumName, ...)
