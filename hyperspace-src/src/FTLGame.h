@@ -1,6 +1,18 @@
 #pragma once
 #include "helpers/PALPlatform.h"  // HS_ANDROID, HS_APPLE_GAME
 
+#if defined(__SWITCH__)
+    #ifndef LIBZHL_INTERFACE
+        #define LIBZHL_INTERFACE
+    #endif
+    #ifndef LIBZHL_PLACEHOLDER
+        #define LIBZHL_PLACEHOLDER {(void)0;}
+    #endif
+    #ifndef __stdcall
+        #define __stdcall
+    #endif
+#endif
+
 #ifdef _WIN32
     #include "FTLGameWin32.h"
 #elif defined(__ANDROID__) || defined(__SWITCH__)
