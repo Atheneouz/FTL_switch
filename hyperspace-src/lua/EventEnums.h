@@ -2,7 +2,18 @@
 #define EVENTENUMS_H
 //NOTE: This approach has a limit of 256 enum values.
 #ifndef SWIG
-    #define BOOST_PP_LIMIT_TUPLE 256
+    #ifndef BOOST_PP_LIMIT_MAG
+        #define BOOST_PP_LIMIT_MAG 256
+    #endif
+    #ifndef BOOST_PP_LIMIT_VARIADIC
+        #define BOOST_PP_LIMIT_VARIADIC 256
+    #endif
+    #ifndef BOOST_PP_LIMIT_TUPLE
+        #define BOOST_PP_LIMIT_TUPLE 256
+    #endif
+    #ifndef BOOST_PP_LIMIT_SEQ
+        #define BOOST_PP_LIMIT_SEQ 256
+    #endif
     #include <boost/preprocessor/seq/for_each.hpp>
     #include <boost/preprocessor/stringize.hpp>
     #include <boost/preprocessor/variadic/to_seq.hpp>

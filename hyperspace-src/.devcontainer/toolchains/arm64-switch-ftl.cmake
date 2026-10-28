@@ -64,7 +64,7 @@ set(_switch_arch_flags "-march=armv8-a+crc+crypto -mtune=cortex-a57 -fPIC")
 set(_switch_sysroot_flags "-isystem ${DEVKITPRO}/libnx/include -isystem ${DEVKITPRO}/portlibs/switch/include")
 
 # Flags C y C++ comunes
-set(_ftl_common_flags "-fsigned-char -fPIC -D__SWITCH__=1 -D_GNU_SOURCE=1 -D_DEFAULT_SOURCE=1 ${_switch_arch_flags} ${_switch_sysroot_flags}")
+set(_ftl_common_flags "-fsigned-char -fPIC -D__SWITCH__=1 -D_GNU_SOURCE=1 -D_DEFAULT_SOURCE=1 -DBOOST_PP_LIMIT_MAG=256 -DBOOST_PP_LIMIT_VARIADIC=256 -DBOOST_PP_LIMIT_TUPLE=256 -DBOOST_PP_LIMIT_SEQ=256 ${_switch_arch_flags} ${_switch_sysroot_flags}")
 
 # Flags específicas de C++ (Apple ABI + libc++ de FTL)
 set(_ftl_cxx_only_flags "-nostdinc++ -isystem ${_ftl_libcxx}/include/c++/v1 -fc++-abi=arm -D_LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION=3 -D_LIBCPP_DARWIN_CTYPE_ABI -D_LIBCPP_PROVIDES_DEFAULT_RUNE_TABLE -D_LIBCPP_HAS_THREAD_API_PTHREAD")

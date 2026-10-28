@@ -5,9 +5,6 @@
     #ifndef LIBZHL_INTERFACE
         #define LIBZHL_INTERFACE
     #endif
-    #ifndef LIBZHL_PLACEHOLDER
-        #define LIBZHL_PLACEHOLDER {(void)0;}
-    #endif
     #ifndef __stdcall
         #define __stdcall
     #endif
