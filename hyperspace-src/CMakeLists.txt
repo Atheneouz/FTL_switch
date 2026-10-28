@@ -310,7 +310,7 @@ target_compile_options(
     # -Wall
 )
 
-target_compile_options(Hyperspace PRIVATE -std=c++11)
+target_compile_options(Hyperspace PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-std=c++11>)
 if(APPLE)
     target_compile_options(Hyperspace PRIVATE -Wno-deprecated-declarations)
 endif()
