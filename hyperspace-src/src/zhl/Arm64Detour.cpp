@@ -5,12 +5,16 @@
     #include "android/MachO.h"
 #endif
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <mutex>
+#include <vector>
+#include <algorithm>
 #ifdef __SWITCH__
     #include <switch.h>
-    #include <malloc.h>
     #define PROT_READ 1
     #define PROT_WRITE 2
     #define PROT_EXEC 4
@@ -20,10 +24,6 @@
 #else
     #include <sys/mman.h>
 #endif
-#include <unistd.h>
-#include <mutex>
-#include <vector>
-#include <algorithm>
 
 #ifndef MAP_FIXED_NOREPLACE
     #define MAP_FIXED_NOREPLACE 0x100000
